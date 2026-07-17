@@ -1,0 +1,348 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Sivakasi Standard Fireworks — theme
+   Light layout in the Sivakasi cracker-trade style: white page,
+   brand red, yellow CTAs, dark nav, Rubik.
+   ============================================================ */
+
+@theme {
+	--color-brand: #e30513;
+	--color-brand-dark: #a80410;
+	--color-brand-deep: #7d0209;
+	--color-yellow: #ffed00;
+	--color-gold: #eeca1c;
+
+	--color-ink: #212121;
+	--color-ink-soft: #333333;
+	--color-muted: #6b6b6b;
+	--color-line: #e5e5e5;
+	--color-row: #f9f9f9;
+	--color-row-alt: #f8f8f8;
+	--color-shell: #eeeeee;
+	--color-nav: #2b2b2b;
+
+	--font-sans: Rubik, ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+	color-scheme: light; /* the client's trade look is light — don't auto-invert it */
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	background: #ffffff;
+	color: var(--color-ink);
+	font-family: var(--font-sans);
+	font-size: 15px; /* matches the reference's readable base — bigger than default */
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Section heading used across the site: centred title + subtitle */
+.section-title {
+	text-align: center;
+	font-weight: 700;
+	font-size: clamp(1.75rem, 3.4vw, 2.4rem);
+	color: var(--color-ink);
+}
+.section-sub {
+	text-align: center;
+	color: var(--color-muted);
+	font-size: 1rem;
+	margin-top: 0.4rem;
+}
+
+/* ============================================================
+   FESTIVE LAYER — gold letters, fireworks, garland, sparkles.
+   A cracker shop's site should feel like Deepavali.
+   ============================================================ */
+
+/* Gold gradient text — the "golden letters" look. */
+.gold-text {
+	background: linear-gradient(100deg, #fff3b0 0%, #ffd54a 35%, #f6a41c 70%, #ffcf5a 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	background-size: 200% auto;
+	animation: goldShimmer 5s linear infinite;
+}
+@keyframes goldShimmer {
+	to {
+		background-position: 200% center;
+	}
+}
+
+/* Gold foil title for section headings on festive/dark bands. */
+.gold-title {
+	background: linear-gradient(100deg, #fff3b0, #ffd54a 45%, #f6a41c 90%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Thin gold divider used under headings. */
+.gold-rule {
+	height: 3px;
+	width: 72px;
+	margin: 0.6rem auto 0;
+	border-radius: 2px;
+	background: linear-gradient(90deg, transparent, #ffd54a, #f6a41c, #ffd54a, transparent);
+}
+
+/* Toran / garland strip — a repeating festive top border. */
+.toran {
+	height: 26px;
+	background:
+		radial-gradient(circle at 12px 0, #ffd54a 5px, transparent 6px) 0 0 / 24px 26px repeat-x,
+		radial-gradient(circle at 12px 4px, #e30513 8px, transparent 9px) 0 0 / 24px 26px repeat-x,
+		linear-gradient(#7d0209, #a80410);
+}
+
+/* Sparkle dots (used in the hero). */
+.sparkle {
+	position: absolute;
+	border-radius: 50%;
+	background: radial-gradient(circle, #fff6cf 0%, #ffd54a 55%, transparent 70%);
+	pointer-events: none;
+	animation: twinkle 2.4s ease-in-out infinite;
+}
+@keyframes twinkle {
+	0%,
+	100% {
+		transform: scale(0.5);
+		opacity: 0.25;
+	}
+	50% {
+		transform: scale(1.15);
+		opacity: 1;
+	}
+}
+
+/* CSS firework bursts — no gif needed. */
+.firework {
+	position: absolute;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	pointer-events: none;
+	animation: burst 3.2s ease-out infinite;
+}
+@keyframes burst {
+	0% {
+		box-shadow:
+			0 0 0 0 #ffd54a,
+			0 0 0 0 #ff6a1f;
+		opacity: 0;
+		transform: scale(0.2);
+	}
+	12% {
+		opacity: 1;
+	}
+	55% {
+		box-shadow:
+			0 -46px 0 -1px #ffd54a, 0 46px 0 -1px #ff6a1f, 46px 0 0 -1px #ff2e88,
+			-46px 0 0 -1px #4d8bff, 33px -33px 0 -1px #22c55e, -33px 33px 0 -1px #ffd54a,
+			33px 33px 0 -1px #ff6a1f, -33px -33px 0 -1px #ff2e88;
+		opacity: 1;
+		transform: scale(1);
+	}
+	100% {
+		box-shadow:
+			0 -70px 0 -3px transparent, 0 70px 0 -3px transparent, 70px 0 0 -3px transparent,
+			-70px 0 0 -3px transparent, 50px -50px 0 -3px transparent, -50px 50px 0 -3px transparent,
+			50px 50px 0 -3px transparent, -50px -50px 0 -3px transparent;
+		opacity: 0;
+		transform: scale(1.15);
+	}
+}
+
+/* Hanging diya lamp glow. */
+.diya-glow {
+	filter: drop-shadow(0 0 6px rgba(255, 170, 40, 0.9));
+	animation: flicker 1.8s ease-in-out infinite;
+}
+@keyframes flicker {
+	0%,
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	50% {
+		opacity: 0.82;
+		transform: translateY(-1px);
+	}
+}
+
+/* Scroll-reveal — entrance animation like the reference's fadeIn/bounce. */
+.reveal {
+	opacity: 0;
+	transform: translateY(22px);
+	transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.in {
+	opacity: 1;
+	transform: none;
+}
+
+/* Marquee — the scrolling announcement strip. */
+.marquee {
+	display: inline-block;
+	padding-left: 100%;
+	animation: marquee 22s linear infinite;
+}
+@keyframes marquee {
+	to {
+		transform: translateX(-50%);
+	}
+}
+.marquee:hover {
+	animation-play-state: paused;
+}
+
+/* Discount slab rows — pulse highlight in sequence. */
+.tier-row {
+	animation: tierPulse 3s ease-in-out infinite;
+}
+@keyframes tierPulse {
+	0%,
+	100% {
+		border-color: rgba(255, 255, 255, 0.15);
+		box-shadow: none;
+	}
+	50% {
+		border-color: rgba(255, 213, 74, 0.7);
+		box-shadow: 0 0 14px rgba(255, 213, 74, 0.25);
+	}
+}
+
+/* Glowing order button. */
+.glow-btn {
+	animation: glowPulse 2.2s ease-in-out infinite;
+	transition: transform 0.15s ease;
+}
+.glow-btn:hover {
+	transform: translateY(-2px) scale(1.02);
+}
+@keyframes glowPulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 rgba(255, 213, 74, 0.5);
+	}
+	50% {
+		box-shadow: 0 0 22px 4px rgba(255, 213, 74, 0.55);
+	}
+}
+
+/* Gentle float — used on the brand mark / accents. */
+.float {
+	animation: floaty 3.5s ease-in-out infinite;
+}
+@keyframes floaty {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-6px);
+	}
+}
+
+/* Yellow pill CTA — the site's primary action */
+.btn-yellow {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	background: var(--color-yellow);
+	color: #1a1a1a;
+	font-weight: 600;
+	font-size: 0.85rem;
+	padding: 0.6rem 1.4rem;
+	border-radius: 3px;
+	transition: filter 0.15s ease, transform 0.15s ease;
+}
+.btn-yellow:hover {
+	filter: brightness(0.94);
+	transform: translateY(-1px);
+}
+
+.btn-red {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	background: var(--color-brand);
+	color: #fff;
+	font-weight: 600;
+	font-size: 0.85rem;
+	padding: 0.6rem 1.4rem;
+	border-radius: 3px;
+	transition: filter 0.15s ease, transform 0.15s ease;
+}
+.btn-red:hover {
+	filter: brightness(0.92);
+	transform: translateY(-1px);
+}
+
+.btn-outline {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	border: 1px solid rgba(255, 255, 255, 0.5);
+	color: #fff;
+	font-weight: 500;
+	font-size: 0.75rem;
+	padding: 0.35rem 0.9rem;
+	border-radius: 3px;
+	transition: background 0.15s ease;
+}
+.btn-outline:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+/* Placeholder tile — every image on this build is a placeholder until the
+   client sends their own photos. Never ship a competitor's images. */
+.ph {
+	display: grid;
+	place-items: center;
+	text-align: center;
+	background: repeating-linear-gradient(
+		45deg,
+		#f3f3f3,
+		#f3f3f3 10px,
+		#ededed 10px,
+		#ededed 20px
+	);
+	color: #9a9a9a;
+	border: 1px solid var(--color-line);
+	font-size: 0.75rem;
+	line-height: 1.4;
+	padding: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+	/* Reveal animates from opacity:0 — without the transition it would stay
+	   invisible, so force it visible for reduced-motion users. */
+	.reveal {
+		opacity: 1 !important;
+		transform: none !important;
+	}
+	.sparkle,
+	.firework {
+		display: none !important;
+	}
+}
