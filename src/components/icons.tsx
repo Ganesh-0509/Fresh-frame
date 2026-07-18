@@ -185,6 +185,24 @@ const Gift = svg(
 	"Gift box",
 );
 
+/* Generic firework burst — fallback for categories without a bespoke icon. */
+const Burst = svg(
+	<>
+		<circle cx="24" cy="24" r="2" fill="currentColor" stroke="none" />
+		<g stroke="#f6a41c">
+			<line x1="24" y1="20" x2="24" y2="10" />
+			<line x1="24" y1="28" x2="24" y2="38" />
+			<line x1="20" y1="24" x2="10" y2="24" />
+			<line x1="28" y1="24" x2="38" y2="24" />
+			<line x1="21" y1="21" x2="14" y2="14" />
+			<line x1="27" y1="27" x2="34" y2="34" />
+			<line x1="27" y1="21" x2="34" y2="14" />
+			<line x1="21" y1="27" x2="14" y2="34" />
+		</g>
+	</>,
+	"Fireworks",
+);
+
 export const CATEGORY_ICONS: Record<string, (p: IconProps) => React.ReactElement> = {
 	sparklers: Sparklers,
 	flowerpots: FlowerPots,
@@ -196,6 +214,22 @@ export const CATEGORY_ICONS: Record<string, (p: IconProps) => React.ReactElement
 	gift: Gift,
 };
 
+/** Match a category id/name by keyword to the closest bespoke icon. */
+function pickIcon(id: string): (p: IconProps) => React.ReactElement {
+	if (CATEGORY_ICONS[id]) return CATEGORY_ICONS[id];
+	const s = id.toLowerCase();
+	if (s.includes("sparkler") || s.includes("twinkl")) return Sparklers;
+	if (s.includes("chakkar") || s.includes("wheel")) return Chakkar;
+	if (s.includes("flower") || s.includes("pot") || s.includes("fountain")) return FlowerPots;
+	if (s.includes("rocket")) return Rocket;
+	if (s.includes("sky") || s.includes("shot") || s.includes("comet")) return Rocket;
+	if (s.includes("bomb") || s.includes("sound")) return Sound;
+	if (s.includes("cake")) return Cake;
+	if (s.includes("gift")) return Gift;
+	if (s.includes("kid")) return Kids;
+	return Burst;
+}
+
 export function CategoryIcon({
 	id,
 	className,
@@ -203,6 +237,6 @@ export function CategoryIcon({
 	id: string;
 	className?: string;
 }) {
-	const Cmp = CATEGORY_ICONS[id];
-	return Cmp ? <Cmp className={className} /> : null;
+	const Cmp = pickIcon(id);
+	return <Cmp className={className} />;
 }

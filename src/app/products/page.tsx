@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import EstimateBuilder from "@/components/EstimateBuilder";
-import { SITE, money } from "@/lib/site";
+import { money } from "@/lib/site";
+import { getCatalog, getSettings } from "@/lib/catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "Price List",
@@ -8,7 +11,9 @@ export const metadata: Metadata = {
 		"Full Deepavali 2026 cracker price list. Build your list and send it on WhatsApp for a same-day estimate. Enquiry only — no online sale.",
 };
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+	const [catalog, settings] = await Promise.all([getCatalog(), getSettings()]);
+
 	return (
 		<>
 			<section className="border-b border-line bg-shell py-8">
@@ -16,8 +21,8 @@ export default function ProductsPage() {
 					<h1 className="text-2xl font-bold text-ink sm:text-3xl">List of Products</h1>
 					<p className="mt-2 max-w-2xl text-[15px] leading-6 text-ink-soft">
 						Set the quantity against anything you want. Your total updates as you go —
-						then tap <strong>Send list on WhatsApp</strong> and we&apos;ll call you back
-						the same day with a final estimate including transport.
+						then tap <strong>Proceed to Checkout</strong> to fill your details and get
+						payment info. Prefer to ask first? Use <strong>Ask on WhatsApp</strong>.
 					</p>
 				</div>
 			</section>
@@ -30,10 +35,14 @@ export default function ProductsPage() {
 						</strong>{" "}
 						No payment is taken on this website. We confirm stock and the final amount
 						with you by phone first; payment is arranged offline afterwards, as required
-						for firecracker sales in India. Minimum order {money(SITE.minOrder)}.
+						for firecracker sales in India. Minimum order {money(settings.minOrder)}.
 					</div>
 
-					<EstimateBuilder />
+					<EstimateBuilder
+						categories={catalog.categories}
+						products={catalog.products}
+						settings={settings}
+					/>
 				</div>
 			</section>
 		</>

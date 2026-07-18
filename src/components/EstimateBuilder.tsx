@@ -1,35 +1,60 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SITE, money, sellPrice, waLink } from "@/lib/site";
-import { CATEGORIES, PRODUCTS } from "@/lib/catalogue";
+import Link from "next/link";
+import { SITE, money, waLinkTo, type Settings } from "@/lib/site";
+import {
+	LINES,
+	categoriesByLine,
+	type CatCategory,
+	type CatProduct,
+	type LineId,
+} from "@/lib/catalog-types";
 import { CategoryIcon, WhatsAppIcon } from "@/components/icons";
+import { useCart } from "@/lib/cart";
 
-type Qty = Record<string, number>;
-
-export default function EstimateBuilder() {
-	const [qty, setQty] = useState<Qty>({});
+export default function EstimateBuilder({
+	categories,
+	products,
+	settings,
+}: {
+	categories: CatCategory[];
+	products: CatProduct[];
+	settings: Settings;
+}) {
+	const { qty, setQty, clear } = useCart();
+	const [line, setLine] = useState<LineId>("standard");
 	const [tab, setTab] = useState<string>("all");
+
+	// Switching product line resets the category filter but KEEPS the cart —
+	// quantities are keyed by product id, so both lines feed one checkout.
+	function switchLine(next: LineId) {
+		setLine(next);
+		setTab("all");
+	}
 
 	const totals = useMemo(() => {
 		let items = 0;
 		let list = 0;
 		let net = 0;
-		for (const p of PRODUCTS) {
+		for (const p of products) {
 			const q = qty[p.id] ?? 0;
 			if (!q) continue;
 			items += q;
-			list += p.listPrice * q;
-			net += sellPrice(p.listPrice) * q;
+			list += p.mrp * q;
+			net += p.price * q;
 		}
 		return { items, list, net, save: list - net };
-	}, [qty]);
+	}, [qty, products]);
 
 	const message = useMemo(() => {
-		const lines = PRODUCTS.filter((p) => (qty[p.id] ?? 0) > 0).map((p) => {
-			const q = qty[p.id];
-			return `• ${p.name} (${p.content}) × ${q} = ${money(sellPrice(p.listPrice) * q)}`;
-		});
+		const lines = products
+			.filter((p) => (qty[p.id] ?? 0) > 0)
+			.map((p) => {
+				const q = qty[p.id];
+				const amount = p.price ? money(p.price * q) : "(price to be confirmed)";
+				return `• ${p.name} (${p.content}) × ${q} = ${amount}`;
+			});
 		if (!lines.length) {
 			return `Hi ${SITE.name}, please send me this year's price list.`;
 		}
@@ -39,27 +64,75 @@ export default function EstimateBuilder() {
 			`\n\n*Total: ${money(totals.net)}*\n\n` +
 			`Please confirm availability and transport. Thank you!`
 		);
-	}, [qty, totals.net]);
+	}, [qty, totals.net, products]);
 
 	/** Normalise the box so it can never disagree with the total. */
 	function setValue(id: string, raw: string) {
 		const trimmed = raw.trim();
 		if (trimmed === "") {
-			// Let them clear it and type — don't slam a 0 back in mid-edit.
-			setQty((q) => ({ ...q, [id]: 0 }));
+			setQty(id, 0);
 			return;
 		}
 		let n = Math.floor(Number(trimmed));
 		if (!Number.isFinite(n) || n < 0) n = 0;
-		setQty((q) => ({ ...q, [id]: n }));
+		setQty(id, n);
 	}
 
-	const belowMin = totals.net > 0 && totals.net < SITE.minOrder;
-	const shown = tab === "all" ? CATEGORIES : CATEGORIES.filter((c) => c.id === tab);
+	const belowMin = totals.net > 0 && totals.net < settings.minOrder;
+	const inLine = categoriesByLine(categories, line);
+	const shown = tab === "all" ? inLine : inLine.filter((c) => c.id === tab);
+
+	// Count how many picked items belong to each line (for the toggle badges).
+	const lineCounts = useMemo(() => {
+		const c: Record<string, number> = {};
+		for (const p of products) if ((qty[p.id] ?? 0) > 0) c[p.line] = (c[p.line] ?? 0) + 1;
+		return c;
+	}, [qty, products]);
 
 	return (
 		<>
-			{/* ---- sticky totals ---- */}
+			{/* ---- BIG product-line header bar (Standard | Elite) ---- */}
+			<div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
+				{LINES.map((l) => {
+					const active = line === l.id;
+					const picked = lineCounts[l.id] ?? 0;
+					return (
+						<button
+							key={l.id}
+							onClick={() => switchLine(l.id)}
+							aria-pressed={active}
+							className={`relative flex flex-col items-center justify-center border-2 px-4 py-5 text-center transition-colors sm:py-6 ${
+								active
+									? "border-brand bg-brand text-white shadow-md"
+									: "border-line bg-white text-ink hover:border-brand/50 hover:bg-row"
+							}`}
+						>
+							<span className="text-xl font-extrabold tracking-tight sm:text-2xl">
+								{l.name}
+							</span>
+							<span
+								className={`mt-0.5 text-[13px] font-medium ${
+									active ? "text-white/85" : "text-muted"
+								}`}
+							>
+								{l.sub}
+							</span>
+							{picked > 0 && (
+								<span
+									className={`absolute right-2 top-2 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[12px] font-bold ${
+										active ? "bg-white text-brand" : "bg-brand text-white"
+									}`}
+									title={`${picked} item${picked > 1 ? "s" : ""} selected in this range`}
+								>
+									{picked}
+								</span>
+							)}
+						</button>
+					);
+				})}
+			</div>
+
+			{/* ---- sticky totals (spans BOTH lines — one shared checkout) ---- */}
 			<div className="sticky top-[44px] z-40 mb-4 border border-line bg-white shadow-sm">
 				<div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
 					<div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -68,39 +141,55 @@ export default function EstimateBuilder() {
 						<Stat label="Your price" value={money(totals.net)} accent />
 						<Stat label="You save" value={money(totals.save)} green />
 					</div>
-					<div className="flex gap-2">
+					<div className="flex flex-wrap items-center gap-2">
 						<button
-							onClick={() => setQty({})}
-							className="border border-line px-3 py-2 text-[14px] font-medium text-ink-soft hover:bg-row"
+							onClick={clear}
+							disabled={totals.items === 0}
+							className="border border-line px-3 py-2 text-[14px] font-medium text-ink-soft hover:bg-row disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							Clear
 						</button>
 						<a
-							href={waLink(message)}
+							href={waLinkTo(settings.whatsapp, message)}
 							target="_blank"
 							rel="noopener"
-							className="inline-flex items-center gap-1.5 bg-[#25D366] px-4 py-2 text-[14px] font-semibold text-[#04331a] hover:brightness-95"
+							className="inline-flex items-center gap-1.5 border border-[#25D366] px-3 py-2 text-[14px] font-semibold text-[#128c4b] hover:bg-[#f0fff6]"
 						>
-							<WhatsAppIcon className="h-4 w-4" /> Send list on WhatsApp
+							<WhatsAppIcon className="h-4 w-4" /> Ask on WhatsApp
 						</a>
+						{totals.items > 0 ? (
+							<Link
+								href="/checkout"
+								className="inline-flex items-center gap-1.5 bg-brand px-5 py-2 text-[14px] font-semibold text-white shadow-sm hover:brightness-110"
+							>
+								Proceed to Checkout →
+							</Link>
+						) : (
+							<span
+								aria-disabled
+								className="inline-flex cursor-not-allowed items-center gap-1.5 bg-brand/40 px-5 py-2 text-[14px] font-semibold text-white"
+							>
+								Proceed to Checkout →
+							</span>
+						)}
 					</div>
 				</div>
 				{belowMin ? (
 					<p className="border-t border-line bg-[#fff6f6] px-4 py-2 text-[14px] text-brand">
-						⚠️ Minimum order is {money(SITE.minOrder)} — add{" "}
-						{money(SITE.minOrder - totals.net)} more to send your list.
+						⚠️ Minimum order is {money(settings.minOrder)} — add{" "}
+						{money(settings.minOrder - totals.net)} more to send your list.
 					</p>
 				) : (
 					<p className="border-t border-line bg-row px-4 py-2 text-[14px] text-muted">
-						Minimum order {money(SITE.minOrder)}. Transport is quoted separately when we
+						Minimum order {money(settings.minOrder)}. Transport is quoted separately when we
 						call you.
 					</p>
 				)}
 			</div>
 
-			{/* ---- category tabs ---- */}
+			{/* ---- category tabs (within the selected line) ---- */}
 			<div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-				{[{ id: "all", name: "All items", emoji: "" }, ...CATEGORIES].map((c) => (
+				{[{ id: "all", name: "All items" }, ...inLine].map((c) => (
 					<button
 						key={c.id}
 						onClick={() => setTab(c.id)}
@@ -120,7 +209,7 @@ export default function EstimateBuilder() {
 
 			{/* ---- tables ---- */}
 			{shown.map((c) => {
-				const items = PRODUCTS.filter((p) => p.categoryId === c.id);
+				const items = products.filter((p) => p.categoryId === c.id && p.active);
 				if (!items.length) return null;
 				return (
 					<section key={c.id} id={c.id} className="mb-10 scroll-mt-28">
@@ -128,7 +217,15 @@ export default function EstimateBuilder() {
 							<CategoryIcon id={c.id} className="h-5 w-5 text-brand" /> {c.name}
 						</h3>
 						<div className="overflow-x-auto border border-line">
-							<table className="w-full min-w-[640px] border-collapse text-[15px]">
+							<table className="w-full min-w-[640px] table-fixed border-collapse text-[15px]">
+								{/* Fixed widths so every category table lines up identically. */}
+								<colgroup>
+									<col className="w-auto" />
+									<col className="w-[110px]" />
+									<col className="w-[110px]" />
+									<col className="w-[90px]" />
+									<col className="w-[110px]" />
+								</colgroup>
 								<thead>
 									<tr className="bg-shell text-left text-[13px] uppercase tracking-wide text-ink-soft">
 										<th className="px-3 py-2.5 font-semibold">Product</th>
@@ -141,12 +238,9 @@ export default function EstimateBuilder() {
 								<tbody>
 									{items.map((p, i) => {
 										const q = qty[p.id] ?? 0;
-										const unit = sellPrice(p.listPrice);
+										const soldOut = p.stock === 0;
 										return (
-											<tr
-												key={p.id}
-												className={i % 2 ? "bg-row-alt" : "bg-white"}
-											>
+											<tr key={p.id} className={i % 2 ? "bg-row-alt" : "bg-white"}>
 												<td className="px-3 py-2.5">
 													<div className="flex items-center gap-2.5">
 														<span className="grid h-10 w-10 flex-none place-items-center rounded border border-line bg-gradient-to-br from-[#fff7e6] to-[#fdeccb]">
@@ -155,12 +249,9 @@ export default function EstimateBuilder() {
 														<span>
 															<span className="block font-medium text-ink">
 																{p.name}
-																{p.isGreen && (
-																	<span
-																		title="NEERI-certified green cracker"
-																		className="ml-1.5 rounded-sm bg-[#e8f7ec] px-1.5 py-0.5 text-[12px] font-semibold text-[#1a7f37]"
-																	>
-																		GREEN
+																{soldOut && (
+																	<span className="ml-1.5 rounded-sm bg-[#fdecec] px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+																		SOLD OUT
 																	</span>
 																)}
 															</span>
@@ -171,10 +262,10 @@ export default function EstimateBuilder() {
 													</div>
 												</td>
 												<td className="px-3 py-2.5 text-muted line-through">
-													{money(p.listPrice)}
+													{p.mrp ? money(p.mrp) : "—"}
 												</td>
 												<td className="px-3 py-2.5 font-semibold text-brand">
-													{money(unit)}
+													{p.price ? money(p.price) : "—"}
 												</td>
 												<td className="px-3 py-2.5">
 													<input
@@ -182,11 +273,12 @@ export default function EstimateBuilder() {
 														min={0}
 														step={1}
 														inputMode="numeric"
+														disabled={soldOut}
 														aria-label={`Quantity for ${p.name}`}
-														value={q === 0 ? "" : q}
-														placeholder="0"
+														value={soldOut ? "" : q === 0 ? "" : q}
+														placeholder={soldOut ? "—" : "0"}
 														onChange={(e) => setValue(p.id, e.target.value)}
-														className="w-[70px] border border-line px-2 py-1.5 text-center font-medium focus:border-brand focus:outline-none"
+														className="w-[70px] border border-line px-2 py-1.5 text-center font-medium focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:bg-row"
 													/>
 												</td>
 												<td
@@ -194,7 +286,7 @@ export default function EstimateBuilder() {
 														q > 0 ? "text-ink" : "text-muted"
 													}`}
 												>
-													{money(unit * q)}
+													{p.price ? money(p.price * q) : "—"}
 												</td>
 											</tr>
 										);
@@ -224,9 +316,7 @@ function Stat({
 }) {
 	return (
 		<div>
-			<p className="text-[12px] font-semibold uppercase tracking-wider text-muted">
-				{label}
-			</p>
+			<p className="text-[12px] font-semibold uppercase tracking-wider text-muted">{label}</p>
 			<p
 				className={`text-lg font-bold ${
 					strike ? "text-muted line-through" : accent ? "text-brand" : green ? "text-[#1a7f37]" : "text-ink"

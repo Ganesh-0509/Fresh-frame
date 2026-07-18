@@ -50,3 +50,8 @@ next-env.d.ts
 
 
 !.dev.vars.example
+
+# local AI tooling (not part of the app)
+.claude/
+.agents/
+skills-lock.json

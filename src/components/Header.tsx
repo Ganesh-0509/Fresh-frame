@@ -10,7 +10,6 @@ import { WhatsAppIcon, PhoneIcon, MailIcon } from "@/components/icons";
 const NAV = [
   { href: "/", label: "Home" },
   { href: "/products", label: "Products" },
-  { href: "/gallery", label: "Gallery" },
   { href: "/about", label: "About Us" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact Us" },

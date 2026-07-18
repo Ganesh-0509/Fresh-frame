@@ -67,7 +67,6 @@ export default function Footer() {
               {[
                 ["/about", "About us"],
                 ["/products", "Products"],
-                ["/gallery", "Gallery"],
                 ["/faq", "FAQ"],
                 ["/contact", "Contact us"],
               ].map(([href, label]) => (

@@ -32,6 +32,16 @@
 			"service": "app"
 		}
 	],
+	// D1 database for orders / enquiries / admin. `database_id` is a LOCAL placeholder —
+	// at deploy, run `wrangler d1 create sf-db` and paste the real id here.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "sf-db",
+			"database_id": "local-placeholder-sf-db",
+			"migrations_dir": "migrations"
+		}
+	],
 	"observability": {
 		"enabled": true
 	},
