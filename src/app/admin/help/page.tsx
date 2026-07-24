@@ -12,8 +12,8 @@ export default async function AdminHelp() {
 	return (
 		<div className="space-y-8">
 			<div>
-				<h1 className="text-2xl font-bold">Help &amp; how-to</h1>
-				<p className="mt-1 text-[13.5px] text-white/60">
+				<h1 className="text-[26px] font-extrabold text-ink">Help &amp; how-to</h1>
+				<p className="mt-1 text-[15px] text-muted">
 					Everything you can change yourself from this panel — no developer needed. Changes
 					go live on the website within a few seconds of saving.
 				</p>
@@ -41,7 +41,7 @@ export default async function AdminHelp() {
 					<b>List price</b> (the printed rate) and <b>Your price</b> (what the customer
 					actually pays). Type the numbers and save.
 				</p>
-				<p className="text-white/60">
+				<p className="text-muted">
 					Any item you haven&apos;t priced yet shows a <b>“—”</b> on the site (never a
 					fake number). The moment you save a real price, it appears instantly for that
 					item.
@@ -68,9 +68,9 @@ export default async function AdminHelp() {
 
 			<Card title="📧 Email notifications">
 				<div className="flex flex-wrap items-center gap-2">
-					<span className={`h-2.5 w-2.5 rounded-full ${mail ? "bg-emerald-400" : "bg-red-400"}`} />
-					<span className="font-semibold">{mail ? "Connected" : "Not connected yet"}</span>
-					<span className="text-white/50">
+					<span className={`h-3 w-3 rounded-full ${mail ? "bg-emerald-500" : "bg-gray-300"}`} />
+					<span className="font-bold text-ink">{mail ? "On" : "Not on yet"}</span>
+					<span className="text-muted">
 						{mail ? `— alerts go to ${inbox}.` : "— see the setup steps below."}
 					</span>
 				</div>
@@ -80,7 +80,7 @@ export default async function AdminHelp() {
 					Until it's set up, you can still email a customer with the{" "}
 					<b>“Email customer”</b> button on each order (it opens your own mail app).
 				</p>
-				<p className="text-white/60">
+				<p className="text-muted">
 					Turning it on is a one-time developer step (adding a couple of secret keys and
 					verifying your email domain). Use the{" "}
 					<Tab href="/admin/settings">Settings</Tab> page's “Send test email” button to
@@ -95,7 +95,7 @@ export default async function AdminHelp() {
 					These aren't design choices — they're legal requirements for firecracker sales in
 					India (Supreme Court orders + Explosives Rules). Please keep them as-is.
 				</p>
-				<p className="text-white/60">
+				<p className="text-muted">
 					The rules are re-issued each year around Deepavali — a quick check with us every
 					September/October keeps everything current.
 				</p>
@@ -113,9 +113,9 @@ export default async function AdminHelp() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<section className="rounded border border-white/10 bg-white/5 p-5">
-			<h2 className="mb-3 text-[15px] font-semibold">{title}</h2>
-			<div className="space-y-2.5 text-[14px] leading-6 text-white/80">{children}</div>
+		<section className="rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-6">
+			<h2 className="mb-3 text-[17px] font-bold text-brand">{title}</h2>
+			<div className="space-y-2.5 text-[15px] leading-7 text-ink-soft">{children}</div>
 		</section>
 	);
 }
@@ -123,8 +123,8 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Row({ k, v }: { k: string; v: string }) {
 	return (
 		<div className="grid grid-cols-1 gap-1 sm:grid-cols-[180px_1fr]">
-			<span className="font-semibold text-white">{k}</span>
-			<span className="text-white/70">{v}</span>
+			<span className="font-bold text-ink">{k}</span>
+			<span className="text-ink-soft">{v}</span>
 		</div>
 	);
 }

@@ -12,47 +12,47 @@ export default async function OrdersPage() {
 
 	return (
 		<div>
-			<h1 className="mb-6 text-2xl font-bold">Orders ({orders.length})</h1>
+			<h1 className="mb-6 text-[26px] font-extrabold text-ink">Orders ({orders.length})</h1>
 
 			{orders.length === 0 ? (
-				<p className="rounded border border-dashed border-white/15 p-8 text-center text-white/50">
-					No orders yet.
+				<p className="rounded-2xl border border-dashed border-line bg-white p-8 text-center text-[15px] text-muted">
+					No orders yet. When a customer places one, it will appear here.
 				</p>
 			) : (
-				<div className="overflow-x-auto rounded border border-white/10">
-					<table className="w-full min-w-[720px] border-collapse text-[14px]">
+				<div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
+					<table className="w-full min-w-[720px] border-collapse text-[15px]">
 						<thead>
-							<tr className="bg-white/5 text-left text-[12px] uppercase tracking-wide text-white/50">
-								<th className="px-3 py-2.5">Order</th>
-								<th className="px-3 py-2.5">Customer</th>
-								<th className="px-3 py-2.5">Location</th>
-								<th className="px-3 py-2.5">Items</th>
-								<th className="px-3 py-2.5">Total</th>
-								<th className="px-3 py-2.5">Status</th>
+							<tr className="bg-row text-left text-[12.5px] font-semibold uppercase tracking-wide text-muted">
+								<th className="px-3 py-3">Order</th>
+								<th className="px-3 py-3">Customer</th>
+								<th className="px-3 py-3">Location</th>
+								<th className="px-3 py-3">Items</th>
+								<th className="px-3 py-3">Total</th>
+								<th className="px-3 py-3">Status</th>
 							</tr>
 						</thead>
 						<tbody>
 							{orders.map((o) => (
-								<tr key={o.id} className="border-t border-white/10 hover:bg-white/5">
-									<td className="px-3 py-2.5">
-										<Link href={`/admin/orders/${o.id}`} className="font-semibold text-[#ffd54a] hover:underline">
+								<tr key={o.id} className="border-t border-line hover:bg-row">
+									<td className="px-3 py-3">
+										<Link href={`/admin/orders/${o.id}`} className="font-bold text-brand hover:underline">
 											{o.id}
 										</Link>
-										<span className="block text-[12px] text-white/40">
+										<span className="block text-[12.5px] text-muted">
 											{new Date(o.createdAt).toLocaleString("en-IN")}
 										</span>
 									</td>
-									<td className="px-3 py-2.5">
+									<td className="px-3 py-3 text-ink">
 										{o.customerName}
-										<span className="block text-[12px] text-white/50">{o.phone}</span>
+										<span className="block text-[12.5px] text-muted">{o.phone}</span>
 									</td>
-									<td className="px-3 py-2.5 text-white/80">
+									<td className="px-3 py-3 text-ink-soft">
 										{o.city}, {o.state}
-										<span className="block text-[12px] text-white/40">{o.pincode}</span>
+										<span className="block text-[12.5px] text-muted">{o.pincode}</span>
 									</td>
-									<td className="px-3 py-2.5">{o.itemCount}</td>
-									<td className="px-3 py-2.5">{o.hasPrices ? money(o.total) : "—"}</td>
-									<td className="px-3 py-2.5">
+									<td className="px-3 py-3 text-ink">{o.itemCount}</td>
+									<td className="px-3 py-3 font-semibold text-ink">{o.hasPrices ? money(o.total) : "—"}</td>
+									<td className="px-3 py-3">
 										<StatusPill status={o.status} />
 									</td>
 								</tr>

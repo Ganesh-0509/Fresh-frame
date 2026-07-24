@@ -24,52 +24,55 @@ export default async function AdminDashboard() {
 
 	return (
 		<div>
-			<h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
+			<h1 className="text-[26px] font-extrabold text-ink">Welcome back!</h1>
+			<p className="mb-6 mt-1 text-[15px] text-muted">
+				Here&apos;s what&apos;s happening in your shop today.
+			</p>
 
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
 				<Tile label="Today's orders" value={String(today)} highlight />
-				<Tile label="Pending payment" value={String(counts.pending_payment ?? 0)} />
-				<Tile label="Pending verification" value={String(counts.pending_verification ?? 0)} />
+				<Tile label="Waiting to pay" value={String(counts.pending_payment ?? 0)} />
+				<Tile label="To check" value={String(counts.pending_verification ?? 0)} />
 				<Tile label="Verified" value={String(counts.verified ?? 0)} />
-				<Tile label="Processing" value={String(processing)} />
+				<Tile label="Packing" value={String(processing)} />
 				<Tile label="Delivered" value={String(counts.delivered ?? 0)} />
 				<Tile label="Cancelled" value={String(cancelled)} />
 			</div>
 
-			<div className="mt-4 rounded border border-white/10 bg-white/5 p-4">
-				<p className="text-[13px] text-white/60">Confirmed order value (verified onward)</p>
-				<p className="text-2xl font-bold text-[#ffd54a]">{money(revenue)}</p>
+			<div className="mt-4 rounded-2xl border border-line bg-white p-5 shadow-sm">
+				<p className="text-[14px] text-muted">Total value of confirmed orders</p>
+				<p className="text-3xl font-extrabold text-brand">{money(revenue)}</p>
 			</div>
 
 			<div className="mt-8 flex items-center justify-between">
-				<h2 className="text-lg font-semibold">Recent orders</h2>
-				<Link href="/admin/orders" className="text-[13.5px] text-[#ffd54a] hover:underline">
-					View all →
+				<h2 className="text-[19px] font-bold text-ink">Latest orders</h2>
+				<Link href="/admin/orders" className="text-[15px] font-semibold text-brand hover:underline">
+					See all →
 				</Link>
 			</div>
 
 			{recent.length === 0 ? (
-				<p className="mt-4 rounded border border-dashed border-white/15 p-8 text-center text-white/50">
-					No orders yet. Submit a test order from the website checkout to see it here.
+				<p className="mt-4 rounded-2xl border border-dashed border-line bg-white p-8 text-center text-[15px] text-muted">
+					No orders yet. When a customer places one, it will appear here.
 				</p>
 			) : (
-				<ul className="mt-3 divide-y divide-white/10 rounded border border-white/10 bg-white/5">
+				<ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
 					{recent.map((o) => (
 						<li key={o.id}>
 							<Link
 								href={`/admin/orders/${o.id}`}
-								className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/5"
+								className="flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-row"
 							>
 								<span>
-									<span className="font-semibold">{o.id}</span>{" "}
-									<span className="text-white/70">· {o.customerName}</span>
-									<span className="block text-[12.5px] text-white/45">
+									<span className="text-[15px] font-bold text-ink">{o.id}</span>{" "}
+									<span className="text-[15px] text-ink-soft">· {o.customerName}</span>
+									<span className="block text-[13px] text-muted">
 										{o.city}, {o.state} · {o.itemCount} items
 									</span>
 								</span>
 								<span className="text-right">
 									<StatusPill status={o.status} />
-									<span className="mt-1 block text-[13px] text-white/70">
+									<span className="mt-1 block text-[14px] font-semibold text-ink">
 										{o.hasPrices ? money(o.total) : "—"}
 									</span>
 								</span>
@@ -85,12 +88,12 @@ export default async function AdminDashboard() {
 function Tile({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
 	return (
 		<div
-			className={`rounded border p-3 ${
-				highlight ? "border-brand/40 bg-brand/15" : "border-white/10 bg-white/5"
+			className={`rounded-xl border p-3.5 shadow-sm ${
+				highlight ? "border-brand/30 bg-brand/10" : "border-line bg-white"
 			}`}
 		>
-			<p className="text-[11.5px] uppercase tracking-wide text-white/50">{label}</p>
-			<p className="text-xl font-bold">{value}</p>
+			<p className="text-[12.5px] font-semibold uppercase tracking-wide text-muted">{label}</p>
+			<p className="text-2xl font-extrabold text-ink">{value}</p>
 		</div>
 	);
 }

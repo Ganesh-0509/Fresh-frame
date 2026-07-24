@@ -20,24 +20,28 @@ export default async function LoginPage({
 	const { e } = await searchParams;
 
 	return (
-		<div className="mx-auto max-w-sm">
-			<h1 className="mb-1 text-2xl font-bold">Admin login</h1>
-			<p className="mb-6 text-[14px] text-white/60">
-				Enter the admin password to manage orders and settings.
+		<div className="mx-auto mt-6 max-w-md rounded-2xl border border-line bg-white p-7 shadow-sm sm:p-8">
+			<h1 className="mb-1 text-[26px] font-extrabold text-ink">Welcome back 👋</h1>
+			<p className="mb-6 text-[15px] text-muted">
+				Enter your password to manage your shop.
 			</p>
 			<form action={login} className="space-y-4">
 				<div>
-					<label className="mb-1 block text-[13px] text-white/70">Password</label>
+					<label className="mb-1 block text-[15px] font-semibold text-ink">Password</label>
 					<input
 						type="password"
 						name="password"
 						autoFocus
-						className="w-full rounded border border-white/20 bg-white/5 px-3 py-2.5 text-white outline-none focus:border-brand"
-						placeholder="••••••••"
+						className="w-full rounded-lg border border-line bg-white px-4 py-3.5 text-[17px] text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+						placeholder="Type your password"
 					/>
 				</div>
-				{e && <p className="text-[13px] text-red-400">Wrong password. Try again.</p>}
-				<button className="w-full rounded bg-brand px-4 py-2.5 font-semibold text-white hover:brightness-110">
+				{e && (
+					<p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[14px] font-medium text-red-700">
+						That password didn&apos;t match. Please try again.
+					</p>
+				)}
+				<button className="w-full rounded-lg bg-brand px-4 py-3.5 text-[17px] font-bold text-white shadow-sm transition hover:brightness-110">
 					Log in
 				</button>
 			</form>

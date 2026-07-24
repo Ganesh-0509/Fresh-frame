@@ -9,7 +9,7 @@ import {
 	STATUS_LABEL,
 	type OrderStatus,
 } from "@/lib/db";
-import { money, SITE } from "@/lib/site";
+import { money } from "@/lib/site";
 import { customerMailLink, statusEmail, emailConfigured, sendEmail, ownerEmail } from "@/lib/email";
 import { StatusPill } from "@/components/StatusPill";
 
@@ -55,15 +55,15 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
 	return (
 		<div>
-			<Link href="/admin/orders" className="text-[13.5px] text-white/60 hover:underline">
+			<Link href="/admin/orders" className="text-[15px] font-semibold text-brand hover:underline">
 				← All orders
 			</Link>
 
 			<div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-				<h1 className="text-2xl font-bold">
+				<h1 className="flex items-center gap-2 text-[26px] font-extrabold text-ink">
 					{order.id} <StatusPill status={order.status} />
 				</h1>
-				<span className="text-[13px] text-white/50">
+				<span className="text-[14px] text-muted">
 					{new Date(order.createdAt).toLocaleString("en-IN")}
 				</span>
 			</div>
@@ -86,22 +86,22 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 						<Row k="UTR / Txn ID" v={order.utr || "—"} />
 						{order.screenshotData ? (
 							<div className="mt-2">
-								<p className="mb-1 text-[12px] text-white/50">Receipt screenshot</p>
+								<p className="mb-1 text-[13px] text-muted">Receipt screenshot</p>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<a href={order.screenshotData} target="_blank" rel="noopener">
-									<img src={order.screenshotData} alt="payment receipt" className="max-h-72 rounded border border-white/15" />
+									<img src={order.screenshotData} alt="payment receipt" className="max-h-72 rounded-lg border border-line" />
 								</a>
 							</div>
 						) : (
-							<p className="mt-1 text-[13px] text-white/40">No screenshot uploaded.</p>
+							<p className="mt-1 text-[14px] text-muted">No screenshot uploaded.</p>
 						)}
 					</Card>
 
 					<Card title={`Items (${order.itemCount})`}>
 						<div className="overflow-x-auto">
-							<table className="w-full text-[13.5px]">
+							<table className="w-full text-[14.5px]">
 								<thead>
-									<tr className="text-left text-white/50">
+									<tr className="text-left text-muted">
 										<th className="py-1.5">Product</th>
 										<th className="py-1.5">Qty</th>
 										<th className="py-1.5 text-right">Total</th>
@@ -109,38 +109,38 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 								</thead>
 								<tbody>
 									{items.map((it) => (
-										<tr key={it.id} className="border-t border-white/10">
-											<td className="py-1.5">
+										<tr key={it.id} className="border-t border-line">
+											<td className="py-1.5 text-ink">
 												{it.name}
-												<span className="block text-[12px] text-white/40">{it.content}</span>
+												<span className="block text-[12.5px] text-muted">{it.content}</span>
 											</td>
-											<td className="py-1.5">{it.qty}</td>
-											<td className="py-1.5 text-right">{it.total ? money(it.total) : "—"}</td>
+											<td className="py-1.5 text-ink">{it.qty}</td>
+											<td className="py-1.5 text-right text-ink">{it.total ? money(it.total) : "—"}</td>
 										</tr>
 									))}
 								</tbody>
 								<tfoot>
-									<tr className="border-t border-white/15">
-										<td className="py-1 text-white/60" colSpan={2}>Subtotal</td>
-										<td className="py-1 text-right text-white/80">
+									<tr className="border-t border-line">
+										<td className="py-1 text-muted" colSpan={2}>Subtotal</td>
+										<td className="py-1 text-right text-ink-soft">
 											{order.hasPrices ? money(order.total) : "—"}
 										</td>
 									</tr>
 									{order.gst > 0 && (
 										<tr>
-											<td className="py-1 text-white/60" colSpan={2}>GST</td>
-											<td className="py-1 text-right text-white/80">{money(order.gst)}</td>
+											<td className="py-1 text-muted" colSpan={2}>GST</td>
+											<td className="py-1 text-right text-ink-soft">{money(order.gst)}</td>
 										</tr>
 									)}
 									<tr>
-										<td className="py-1 text-white/60" colSpan={2}>Transport</td>
-										<td className="py-1 text-right text-white/80">{money(order.transport)}</td>
+										<td className="py-1 text-muted" colSpan={2}>Transport</td>
+										<td className="py-1 text-right text-ink-soft">{money(order.transport)}</td>
 									</tr>
-									<tr className="border-t border-white/15 font-semibold">
-										<td className="py-2" colSpan={2}>
+									<tr className="border-t border-line font-bold">
+										<td className="py-2 text-ink" colSpan={2}>
 											Grand total {order.hasPrices ? "" : "(prices TBC)"}
 										</td>
-										<td className="py-2 text-right text-[#ffd54a]">
+										<td className="py-2 text-right text-brand">
 											{order.hasPrices ? money(order.grandTotal || order.total + order.transport) : "—"}
 										</td>
 									</tr>
@@ -154,22 +154,22 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 				<div className="space-y-6">
 					<Card title="Verify payment">
 						{order.status === "pending_verification" ? (
-							<p className="mb-3 text-[13px] text-amber-300">
-								Check the UTR/screenshot against your bank, then approve or reject.
+							<p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] text-amber-800">
+								Check the payment reference / screenshot against your bank, then approve or reject.
 							</p>
 						) : (
-							<p className="mb-3 text-[13px] text-white/50">Current: <StatusPill status={order.status} /></p>
+							<p className="mb-3 text-[14px] text-muted">Current: <StatusPill status={order.status} /></p>
 						)}
 						<div className="flex gap-2">
 							<form action={setStatus} className="flex-1">
 								<input type="hidden" name="status" value="verified" />
-								<button className="w-full rounded bg-emerald-500 px-3 py-2 text-[14px] font-semibold text-black hover:brightness-110">
+								<button className="w-full rounded-lg bg-emerald-600 px-3 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">
 									✓ Approve
 								</button>
 							</form>
 							<form action={setStatus} className="flex-1">
 								<input type="hidden" name="status" value="rejected" />
-								<button className="w-full rounded border border-red-400/50 px-3 py-2 text-[14px] font-semibold text-red-300 hover:bg-red-400/10">
+								<button className="w-full rounded-lg border border-red-300 px-3 py-2.5 text-[15px] font-semibold text-red-600 hover:bg-red-50">
 									✕ Reject
 								</button>
 							</form>
@@ -178,7 +178,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 							{(["confirmed", "packing", "ready", "dispatched", "delivered"] as const).map((st) => (
 								<form key={st} action={setStatus}>
 									<input type="hidden" name="status" value={st} />
-									<button className="rounded border border-white/20 px-2.5 py-1.5 text-[12.5px] text-white/80 hover:bg-white/10">
+									<button className="rounded-lg border border-line bg-white px-3 py-2 text-[13.5px] font-semibold text-ink-soft hover:bg-row">
 										{STATUS_LABEL[st]}
 									</button>
 								</form>
@@ -188,39 +188,39 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
 					<Card title="Manage order">
 						<form action={save} className="space-y-3">
-							<label className="block text-[13px] text-white/70">
+							<label className="block text-[14px] font-semibold text-ink">
 								Status
 								<select
 									name="status"
 									defaultValue={order.status}
-									className="mt-1 w-full rounded border border-white/20 bg-white/5 px-3 py-2 text-white outline-none focus:border-brand"
+									className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
 								>
 									{ORDER_STATUSES.map((s) => (
-										<option key={s} value={s} className="bg-[#0e1428]">
+										<option key={s} value={s}>
 											{STATUS_LABEL[s]}
 										</option>
 									))}
 								</select>
 							</label>
-							<label className="block text-[13px] text-white/70">
-								Payment reference / UTR
+							<label className="block text-[14px] font-semibold text-ink">
+								Payment reference number
 								<input
 									name="paymentRef"
 									defaultValue={order.paymentRef ?? ""}
-									placeholder="e.g. UPI txn id from the receipt"
-									className="mt-1 w-full rounded border border-white/20 bg-white/5 px-3 py-2 text-white outline-none focus:border-brand"
+									placeholder="The UTR / transaction number from the receipt"
+									className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
 								/>
 							</label>
-							<label className="block text-[13px] text-white/70">
-								Internal note
+							<label className="block text-[14px] font-semibold text-ink">
+								Private note (only you see this)
 								<textarea
 									name="adminNote"
 									defaultValue={order.adminNote ?? ""}
 									rows={3}
-									className="mt-1 w-full rounded border border-white/20 bg-white/5 px-3 py-2 text-white outline-none focus:border-brand"
+									className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
 								/>
 							</label>
-							<button className="w-full rounded bg-brand px-4 py-2.5 font-semibold text-white hover:brightness-110">
+							<button className="w-full rounded-lg bg-brand px-4 py-3 text-[16px] font-bold text-white hover:brightness-110">
 								Save
 							</button>
 						</form>
@@ -229,7 +229,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 					<Card title="Email the customer">
 						{order.email ? (
 							<>
-								<p className="mb-3 text-[13px] text-white/60">
+								<p className="mb-3 text-[14px] text-muted">
 									Send a status update by email.
 								</p>
 								<a
@@ -238,20 +238,20 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 										statusEmail(order).subject,
 										statusEmail(order).text,
 									)}
-									className="block rounded bg-brand px-4 py-2.5 text-center font-semibold text-white hover:brightness-110"
+									className="block rounded-lg bg-brand px-4 py-3 text-center text-[15px] font-bold text-white hover:brightness-110"
 								>
 									Open email with “{STATUS_LABEL[order.status as OrderStatus]}” message
 								</a>
 							</>
 						) : (
-							<p className="mb-1 text-[13px] text-amber-300">
-								This customer didn&apos;t give an email address — call them on {order.phone}.
+							<p className="mb-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] text-amber-800">
+								This customer didn&apos;t give an email — call them on {order.phone}.
 							</p>
 						)}
-						<p className="mt-3 text-[12px] text-white/45">
+						<p className="mt-3 text-[13px] text-muted">
 							{emailConfigured()
-								? "Email is connected — status changes auto-send by email."
-								: `Automated sending (an email on each status change) turns on once ${SITE.name}'s Resend API key + sender are added as secrets. Until then, use the button above.`}
+								? "Emails are on — status changes send automatically."
+								: `Automatic emails aren't switched on yet. Until then, use the button above to send one yourself.`}
 						</p>
 					</Card>
 				</div>
@@ -262,10 +262,8 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<section className="rounded border border-white/10 bg-white/5 p-4">
-			<h2 className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-white/50">
-				{title}
-			</h2>
+		<section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+			<h2 className="mb-3 text-[15px] font-bold text-brand">{title}</h2>
 			{children}
 		</section>
 	);
@@ -273,9 +271,9 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function Row({ k, v }: { k: string; v: string }) {
 	return (
-		<div className="flex gap-3 py-1 text-[14px]">
-			<span className="w-24 shrink-0 text-white/50">{k}</span>
-			<span className="text-white/90">{v}</span>
+		<div className="flex gap-3 py-1 text-[15px]">
+			<span className="w-24 shrink-0 text-muted">{k}</span>
+			<span className="font-medium text-ink">{v}</span>
 		</div>
 	);
 }

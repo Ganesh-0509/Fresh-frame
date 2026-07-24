@@ -48,19 +48,19 @@ export default function ImageInput({
 	}
 
 	return (
-		<label className="block text-[13px] text-white/70">
+		<label className="block text-[15px] font-semibold text-ink">
 			{label}
 			<input type="hidden" name={name} value={val} />
-			<div className="mt-1 flex items-center gap-3">
+			<div className="mt-1.5 flex items-center gap-3">
 				{val ? (
 					// eslint-disable-next-line @next/next/no-img-element
-					<img src={val} alt={label} className="h-16 w-16 rounded border border-white/15 bg-white object-contain" />
+					<img src={val} alt={label} className="h-20 w-20 rounded-lg border border-line bg-white object-contain p-1" />
 				) : (
-					<span className="grid h-16 w-16 place-items-center rounded border border-dashed border-white/20 text-[11px] text-white/40">none</span>
+					<span className="grid h-20 w-20 place-items-center rounded-lg border border-dashed border-line text-[12px] text-muted">none yet</span>
 				)}
-				<input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} className="text-[12px] text-white/70 file:mr-2 file:border file:border-white/20 file:bg-white/10 file:px-2 file:py-1 file:text-white" />
+				<input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} className="text-[13px] text-ink-soft file:mr-2 file:cursor-pointer file:rounded-md file:border file:border-line file:bg-row file:px-3 file:py-2 file:text-[13px] file:font-semibold file:text-ink hover:file:bg-shell" />
 				{val && (
-					<button type="button" onClick={() => setVal("")} className="text-[12px] text-red-300 hover:underline">
+					<button type="button" onClick={() => setVal("")} className="text-[13px] font-semibold text-brand hover:underline">
 						remove
 					</button>
 				)}

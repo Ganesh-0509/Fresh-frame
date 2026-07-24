@@ -10,10 +10,11 @@ export default async function AdminProducts() {
 
 	return (
 		<div>
-			<h1 className="mb-1 text-2xl font-bold">Products ({catalog.products.length})</h1>
-			<p className="mb-6 text-[13.5px] text-white/60">
-				Edit prices, names, packs and availability. Changes go live on the website
-				immediately. MRP = struck-through price; Price = what the customer pays.
+			<h1 className="text-[26px] font-extrabold text-ink">Products &amp; prices</h1>
+			<p className="mb-6 mt-1 text-[15px] text-muted">
+				Set your prices, edit names, or hide items. Changes show on the website straight away.
+				<br />
+				<b className="text-ink-soft">Old price</b> = the crossed-out price · <b className="text-ink-soft">Your price</b> = what the customer actually pays.
 			</p>
 			<ProductEditor categories={catalog.categories} products={catalog.products} />
 		</div>

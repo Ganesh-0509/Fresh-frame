@@ -17,38 +17,39 @@ async function logout() {
 }
 
 const NAV = [
-	{ href: "/admin", label: "Dashboard" },
-	{ href: "/admin/orders", label: "Orders" },
-	{ href: "/admin/products", label: "Products" },
-	{ href: "/admin/settings", label: "Settings" },
-	{ href: "/admin/help", label: "Help" },
+	{ href: "/admin", label: "Home", icon: "🏠" },
+	{ href: "/admin/orders", label: "Orders", icon: "📦" },
+	{ href: "/admin/products", label: "Products", icon: "🏷️" },
+	{ href: "/admin/settings", label: "Settings", icon: "⚙️" },
+	{ href: "/admin/help", label: "Help", icon: "❓" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 	const authed = await isAuthed();
 	return (
-		<div className="min-h-screen bg-[#0b1020] text-white">
-			<header className="border-b border-white/10 bg-[#0e1428]">
-				<div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-3">
-					<Link href="/admin" className="flex items-center gap-2 font-bold">
-						<span className="grid h-7 w-7 place-items-center rounded bg-brand text-white">
-							<BrandMark className="h-5 w-5" />
+		<div className="min-h-screen bg-[#faf6ef] text-ink">
+			<header className="border-b border-line bg-white shadow-sm">
+				<div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3 px-4 py-3">
+					<Link href="/admin" className="flex items-center gap-2.5 text-[17px] font-extrabold text-ink">
+						<span className="grid h-9 w-9 place-items-center rounded-lg bg-brand text-white">
+							<BrandMark className="h-6 w-6" />
 						</span>
 						{SITE.name} · Admin
 					</Link>
 					{authed && (
-						<nav className="flex items-center gap-1 text-[13.5px]">
+						<nav className="flex flex-wrap items-center gap-1 text-[15px] font-semibold">
 							{NAV.map((n) => (
 								<Link
 									key={n.href}
 									href={n.href}
-									className="rounded px-3 py-1.5 text-white/80 hover:bg-white/10 hover:text-white"
+									className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-ink-soft hover:bg-row hover:text-brand"
 								>
+									<span aria-hidden>{n.icon}</span>
 									{n.label}
 								</Link>
 							))}
 							<form action={logout}>
-								<button className="ml-1 rounded border border-white/20 px-3 py-1.5 text-white/80 hover:bg-white/10">
+								<button className="ml-1 rounded-lg border border-line px-3 py-2 text-ink-soft hover:bg-row">
 									Log out
 								</button>
 							</form>
