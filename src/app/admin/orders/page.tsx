@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { listOrders } from "@/lib/db";
 import { money } from "@/lib/site";
-import { StatusPill } from "@/app/admin/page";
+import { StatusPill } from "@/components/StatusPill";
 
 export const dynamic = "force-dynamic";
 

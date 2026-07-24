@@ -11,7 +11,7 @@ import {
 } from "@/lib/db";
 import { money, SITE } from "@/lib/site";
 import { customerMailLink, statusEmail, emailConfigured, sendEmail, ownerEmail } from "@/lib/email";
-import { StatusPill } from "@/app/admin/page";
+import { StatusPill } from "@/components/StatusPill";
 
 export const dynamic = "force-dynamic";
 
