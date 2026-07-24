@@ -6,7 +6,7 @@
  *
  * This is an ENQUIRY/ESTIMATE cart, not e-commerce checkout. No payment is taken
  * on the site (firecracker law). Payment is manual (UPI/bank) and the customer
- * sends the receipt screenshot on WhatsApp; the owner verifies it in the admin panel.
+ * uploads the receipt screenshot at checkout; the owner verifies it in the admin panel.
  */
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";

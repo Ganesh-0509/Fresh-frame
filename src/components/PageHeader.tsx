@@ -1,3 +1,10 @@
+import Fireworks from "@/components/Fireworks";
+import { HangingLamp } from "@/components/icons";
+
+/**
+ * Shared page banner. Uses the same night-sky + fireworks + ember animation as
+ * the home hero so every page feels like one festive site.
+ */
 export default function PageHeader({
 	title,
 	subtitle,
@@ -6,22 +13,23 @@ export default function PageHeader({
 	subtitle?: string;
 }) {
 	return (
-		<section className="relative overflow-hidden border-b border-line bg-gradient-to-r from-brand-deep to-brand-dark py-9 text-white">
+		<section className="night-bg relative overflow-hidden py-14 text-white">
+			<Fireworks />
+			{/* hanging diyas across the top, matching the home hero */}
 			<div
 				aria-hidden
-				className="pointer-events-none absolute inset-0 flex items-start justify-around px-8 pt-1 text-lg opacity-70"
+				className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-around px-8 text-yellow opacity-90"
 			>
-				{["🎆", "🪔", "🎇", "🪔", "🎆"].map((d, i) => (
+				{Array.from({ length: 7 }).map((_, i) => (
 					<span key={i} className="diya-glow" style={{ animationDelay: `${(i % 3) * 0.3}s` }}>
-						{d}
+						<HangingLamp className="h-9 w-4" />
 					</span>
 				))}
 			</div>
 			<div className="relative z-10 mx-auto max-w-[1170px] px-4">
-				<h1 className="gold-text text-2xl font-extrabold sm:text-3xl">{title}</h1>
-				<div className="mt-2 h-[3px] w-16 rounded bg-gradient-to-r from-yellow to-[#f6a41c]" />
+				<h1 className="gold-ink underline-spark text-3xl font-black sm:text-5xl">{title}</h1>
 				{subtitle && (
-					<p className="mt-2 max-w-2xl text-[15px] leading-6 text-white/85">{subtitle}</p>
+					<p className="mt-5 max-w-2xl text-[17px] leading-7 text-white/85">{subtitle}</p>
 				)}
 			</div>
 		</section>

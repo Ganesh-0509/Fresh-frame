@@ -23,7 +23,21 @@ const SPARKLES = [
 	{ left: "62%", top: "78%", size: 5, delay: "0.2s" },
 ];
 
-export default function Fireworks() {
+// Slow warm sparks drifting down — left/duration/delay fixed (no Math.random)
+// so server + client markup match.
+const EMBERS = [
+	{ left: "6%", dur: "7s", delay: "0s" },
+	{ left: "16%", dur: "9s", delay: "1.4s" },
+	{ left: "27%", dur: "6.5s", delay: "3.1s" },
+	{ left: "39%", dur: "8.5s", delay: "0.7s" },
+	{ left: "52%", dur: "7.5s", delay: "2.2s" },
+	{ left: "63%", dur: "9.5s", delay: "4s" },
+	{ left: "72%", dur: "6.8s", delay: "1s" },
+	{ left: "83%", dur: "8.2s", delay: "2.9s" },
+	{ left: "93%", dur: "7.2s", delay: "0.4s" },
+];
+
+export default function Fireworks({ embers = true }: { embers?: boolean }) {
 	return (
 		<div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
 			{BURSTS.map((b, i) => (
@@ -46,6 +60,14 @@ export default function Fireworks() {
 					}}
 				/>
 			))}
+			{embers &&
+				EMBERS.map((e, i) => (
+					<span
+						key={`e${i}`}
+						className="ember"
+						style={{ left: e.left, animationDuration: e.dur, animationDelay: e.delay }}
+					/>
+				))}
 		</div>
 	);
 }

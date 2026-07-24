@@ -3,10 +3,10 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SideBar from "@/components/SideBar";
 import PublicOnly from "@/components/PublicOnly";
+import WelcomePopup from "@/components/WelcomePopup";
 import { CartProvider } from "@/lib/cart";
-import { SITE } from "@/lib/site";
+import { SITE, publicSite } from "@/lib/site";
 import { getSettings } from "@/lib/catalog";
 
 const rubik = Rubik({
@@ -30,11 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
 	};
 }
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const site = publicSite(await getSettings());
 	return (
 		<html lang="en" className={rubik.variable}>
 			<head>
@@ -43,13 +44,12 @@ export default function RootLayout({
 			<body className="flex min-h-screen flex-col antialiased">
 				<CartProvider>
 					<PublicOnly>
-						<Header />
-						<SideBar />
+						<Header site={site} />
 					</PublicOnly>
-					{/* Bottom padding on mobile so the fixed bottom action bar never covers content. */}
-					<main className="flex-1 pb-16 lg:pb-0">{children}</main>
+					<main className="flex-1">{children}</main>
 					<PublicOnly>
-						<Footer />
+						<Footer site={site} />
+						<WelcomePopup site={site} />
 					</PublicOnly>
 				</CartProvider>
 			</body>

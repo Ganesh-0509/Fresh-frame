@@ -10,15 +10,17 @@ import {
 	type OrderStatus,
 } from "@/lib/db";
 import { money, SITE } from "@/lib/site";
-import { customerWaLink, statusMessage, waConfigured, sendWhatsAppText } from "@/lib/whatsapp";
+import { customerMailLink, statusEmail, emailConfigured, sendEmail, ownerEmail } from "@/lib/email";
 import { StatusPill } from "@/app/admin/page";
 
 export const dynamic = "force-dynamic";
 
-/** Auto-notify the customer on WhatsApp for a status (no-op until Meta is configured). */
+/** Auto-notify the customer by email for a status (no-op until Resend is configured). */
 async function notify(orderId: string, status: OrderStatus) {
 	const o = await getOrder(orderId);
-	if (o && waConfigured()) await sendWhatsAppText(o.whatsapp || o.phone, statusMessage({ ...o, status }));
+	if (!o || !o.email || !emailConfigured()) return;
+	const { subject, text } = statusEmail({ ...o, status });
+	await sendEmail({ to: o.email, subject, text, replyTo: ownerEmail() });
 }
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -224,22 +226,32 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 						</form>
 					</Card>
 
-					<Card title="Message the customer">
-						<p className="mb-3 text-[13px] text-white/60">
-							Send a status update on WhatsApp.
-						</p>
-						<a
-							href={customerWaLink(order.whatsapp || order.phone, statusMessage(order))}
-							target="_blank"
-							rel="noopener"
-							className="block rounded bg-[#25D366] px-4 py-2.5 text-center font-semibold text-[#04331a] hover:brightness-95"
-						>
-							Open WhatsApp with “{STATUS_LABEL[order.status as OrderStatus]}” message
-						</a>
+					<Card title="Email the customer">
+						{order.email ? (
+							<>
+								<p className="mb-3 text-[13px] text-white/60">
+									Send a status update by email.
+								</p>
+								<a
+									href={customerMailLink(
+										order.email,
+										statusEmail(order).subject,
+										statusEmail(order).text,
+									)}
+									className="block rounded bg-brand px-4 py-2.5 text-center font-semibold text-white hover:brightness-110"
+								>
+									Open email with “{STATUS_LABEL[order.status as OrderStatus]}” message
+								</a>
+							</>
+						) : (
+							<p className="mb-1 text-[13px] text-amber-300">
+								This customer didn&apos;t give an email address — call them on {order.phone}.
+							</p>
+						)}
 						<p className="mt-3 text-[12px] text-white/45">
-							{waConfigured()
-								? "Meta automation is connected — status changes can auto-send."
-								: `Automated sending (auto-reply on each status) turns on once ${SITE.name}'s Meta WhatsApp API tokens are added in Settings. Until then, use the button above.`}
+							{emailConfigured()
+								? "Email is connected — status changes auto-send by email."
+								: `Automated sending (an email on each status change) turns on once ${SITE.name}'s Resend API key + sender are added as secrets. Until then, use the button above.`}
 						</p>
 					</Card>
 				</div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb, orders } from "@/lib/db";
+import { sendEmail, ownerEmail, ownerOrderEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -26,14 +27,12 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Screenshot too large" }, { status: 413 });
 	}
 
+	let row: typeof orders.$inferSelect | undefined;
 	try {
 		const db = getDb();
-		const existing = await db
-			.select({ id: orders.id, status: orders.status })
-			.from(orders)
-			.where(eq(orders.id, id))
-			.limit(1);
+		const existing = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
 		if (!existing[0]) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+		row = existing[0];
 
 		await db
 			.update(orders)
@@ -46,6 +45,21 @@ export async function POST(req: NextRequest) {
 	} catch (e) {
 		console.error("order confirm failed", e);
 		return NextResponse.json({ error: "Could not confirm order" }, { status: 500 });
+	}
+
+	// Tell the owner a payment is waiting to be verified (no-op until Resend is configured).
+	try {
+		if (row) {
+			const { subject, text } = ownerOrderEmail(row, "payment");
+			await sendEmail({
+				to: ownerEmail(),
+				subject,
+				text: `${text}\n\nUTR: ${utr || "—"}`,
+				replyTo: row.email || undefined,
+			});
+		}
+	} catch (e) {
+		console.error("owner notify failed", e);
 	}
 
 	return NextResponse.json({ ok: true });

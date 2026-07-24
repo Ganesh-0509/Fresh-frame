@@ -5,7 +5,7 @@
  *   1. Details — name / phone / email(opt) / GST no(opt) / address / state / city / pincode
  *   2. Order created (status "Pending payment", visible in admin) → Payment page: QR + amount + Order ID
  *   3. Confirm — "I have completed payment" → enter UTR + upload receipt screenshot → "Pending verification"
- *   4. Done — thank you; admin verifies → auto-WhatsApp
+ *   4. Done — thank you; admin verifies → auto-email
  *
  * ⚖️ Only a static QR — the site never learns payment happened automatically; the customer
  * supplies UTR + screenshot and the admin approves. No payment gateway.
@@ -13,10 +13,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SITE, money, waLinkTo, gstAmount, type Settings } from "@/lib/site";
+import { money, gstAmount, type Settings } from "@/lib/site";
 import { type CatProduct } from "@/lib/catalog-types";
 import { useCart, selectedItems, cartTotals } from "@/lib/cart";
-import { WhatsAppIcon } from "@/components/icons";
 
 type Step = "details" | "pay" | "confirm" | "done";
 
@@ -100,33 +99,6 @@ export default function CheckoutFlow({
 
 	const errors = validate(d, cities);
 	const canContinue = Object.keys(errors).length === 0 && !belowMin;
-
-	const message = useMemo(() => {
-		const lines = items.map((l) => {
-			const amount = l.product.price ? money(l.total) : "(price to be confirmed)";
-			return `• ${l.product.name} (${l.product.content}) × ${l.qty} = ${amount}`;
-		});
-		const totalBlock = hasPrices
-			? `Subtotal: ${money(totals.net)}\n` +
-			  (gst ? `GST (${settings.gstPct}%): ${money(gst)}\n` : "") +
-			  `Transport (${d.state}): ${money(transport)}\n` +
-			  `*Total: ${money(grand)}*`
-			: "*Total: to be confirmed (incl. transport)*";
-		return (
-			`*ORDER — ${SITE.name}*\n` +
-			(orderId ? `*Order ID: ${orderId}*\n` : "") +
-			`\n*Customer*\n` +
-			`Name: ${d.name}\n` +
-			`Phone: ${d.phone}\n` +
-			(d.email ? `Email: ${d.email}\n` : "") +
-			(d.gstNo ? `GST: ${d.gstNo}\n` : "") +
-			`Address: ${d.address}\n` +
-			`${d.city}, ${d.state} - ${d.pincode}\n\n` +
-			`*Order*\n${lines.join("\n")}\n\n${totalBlock}\n\n` +
-			(utr ? `Payment UTR: ${utr}\n` : "") +
-			`I have made the payment — receipt attached below 👇`
-		);
-	}, [items, totals.net, gst, transport, grand, hasPrices, d, orderId, utr, settings.gstPct]);
 
 	function set<K extends keyof Details>(k: K, v: string) {
 		setD((prev) => ({ ...prev, [k]: v }));
@@ -227,8 +199,8 @@ export default function CheckoutFlow({
 	if (items.length === 0 && step === "details") {
 		return (
 			<div className="border border-line bg-row p-8 text-center">
-				<p className="text-[15px] text-ink-soft">Your list is empty.</p>
-				<Link href="/products" className="mt-4 inline-block bg-brand px-5 py-2.5 text-[14px] font-semibold text-white hover:brightness-110">
+				<p className="text-[16px] text-ink-soft">Your list is empty.</p>
+				<Link href="/products" className="mt-4 inline-block bg-brand px-5 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">
 					← Browse products
 				</Link>
 			</div>
@@ -238,7 +210,7 @@ export default function CheckoutFlow({
 	return (
 		<>
 			<Stepper step={step} />
-			{err && <p className="mb-4 rounded border border-brand/40 bg-[#fff6f6] px-3 py-2 text-[13px] text-brand">{err}</p>}
+			{err && <p className="mb-4 rounded border border-brand/40 bg-[#fff6f6] px-3 py-2 text-[14px] text-brand">{err}</p>}
 
 			{step === "details" && (
 				<div className="grid gap-6 md:grid-cols-[1fr_320px]">
@@ -283,21 +255,21 @@ export default function CheckoutFlow({
 						</div>
 
 						{d.state && cities.length === 0 && (
-							<p className="mt-2 text-[13px] text-brand">Sorry, we don&apos;t have a delivery point in {d.state} yet — please contact us on WhatsApp.</p>
+							<p className="mt-2 text-[14px] text-brand">Sorry, we don&apos;t have a delivery point in {d.state} yet — please contact us.</p>
 						)}
-						<p className="mt-3 text-[13px] text-muted">Transport to your nearest transport office; a per-state fee is added at payment.</p>
+						<p className="mt-3 text-[14px] text-muted">Transport to your nearest transport office; a per-state fee is added at payment.</p>
 
 						<div className="mt-6 flex items-center gap-3">
-							<Link href="/products" className="border border-line px-4 py-2.5 text-[14px] font-medium text-ink-soft hover:bg-row">← Edit list</Link>
-							<button onClick={createOrder} disabled={busy} className="bg-brand px-5 py-2.5 text-[14px] font-semibold text-white hover:brightness-110 disabled:opacity-60">
+							<Link href="/products" className="border border-line px-4 py-2.5 text-[15px] font-medium text-ink-soft hover:bg-row">← Edit list</Link>
+							<button onClick={createOrder} disabled={busy} className="bg-brand px-5 py-2.5 text-[15px] font-semibold text-white hover:brightness-110 disabled:opacity-60">
 								{busy ? "Placing order…" : "Continue to Payment →"}
 							</button>
 						</div>
 						{touched && belowMin && (
-							<p className="mt-2 text-[13px] text-brand">Minimum order is {money(settings.minOrder)} — add {money(settings.minOrder - totals.net)} more.</p>
+							<p className="mt-2 text-[14px] text-brand">Minimum order is {money(settings.minOrder)} — add {money(settings.minOrder - totals.net)} more.</p>
 						)}
 						{touched && !belowMin && Object.keys(errors).length > 0 && (
-							<p className="mt-2 text-[13px] text-brand">Please fill the required fields above.</p>
+							<p className="mt-2 text-[14px] text-brand">Please fill the required fields above.</p>
 						)}
 					</div>
 
@@ -310,25 +282,25 @@ export default function CheckoutFlow({
 					<div>
 						<div className="mb-4 flex flex-wrap items-center justify-between gap-2 border border-line bg-shell px-4 py-3">
 							<div>
-								<p className="text-[12px] uppercase tracking-wide text-muted">Order ID</p>
+								<p className="text-[13px] uppercase tracking-wide text-muted">Order ID</p>
 								<p className="text-lg font-bold text-ink">{orderId}</p>
 							</div>
 							<div className="text-right">
-								<p className="text-[12px] uppercase tracking-wide text-muted">Amount to pay</p>
+								<p className="text-[13px] uppercase tracking-wide text-muted">Amount to pay</p>
 								<p className="text-2xl font-extrabold text-brand">{money(grand)}</p>
 							</div>
 						</div>
 
 						<div className="mb-4 border border-line bg-white p-4">
-							<h3 className="mb-3 text-[15px] font-semibold text-ink">Scan &amp; pay — GPay / PhonePe / BHIM / Paytm</h3>
+							<h3 className="mb-3 text-[16px] font-semibold text-ink">Scan &amp; pay — GPay / PhonePe / BHIM / Paytm</h3>
 							<div className="flex flex-wrap items-center gap-5">
 								{settings.upiQr ? (
 									// eslint-disable-next-line @next/next/no-img-element
 									<img src={settings.upiQr} alt="UPI QR code" className="h-44 w-44 border border-line object-contain" />
 								) : (
-									<div className="grid h-44 w-44 place-items-center border border-dashed border-line bg-row text-center text-[12px] text-muted">UPI QR code<br />(upload in admin)</div>
+									<div className="grid h-44 w-44 place-items-center border border-dashed border-line bg-row text-center text-[13px] text-muted">UPI QR code<br />(upload in admin)</div>
 								)}
-								<div className="text-[14px]">
+								<div className="text-[15px]">
 									<p className="text-muted">UPI ID</p>
 									<p className="select-all text-lg font-bold text-ink">{settings.upi}</p>
 									<p className="mt-2 text-muted">Or GPay / PhonePe number</p>
@@ -338,19 +310,19 @@ export default function CheckoutFlow({
 						</div>
 
 						<div className="mb-5 border border-line bg-white p-4">
-							<h3 className="mb-3 text-[15px] font-semibold text-ink">Or pay by bank transfer</h3>
-							<dl className="grid grid-cols-[110px_1fr] gap-y-1.5 text-[14px]">
+							<h3 className="mb-3 text-[16px] font-semibold text-ink">Or pay by bank transfer</h3>
+							<dl className="grid grid-cols-[110px_1fr] gap-y-1.5 text-[15px]">
 								<dt className="text-muted">Account name</dt><dd className="font-medium text-ink">{settings.bankHolder}</dd>
 								<dt className="text-muted">Bank</dt><dd className="font-medium text-ink">{settings.bankName}{settings.bankBranch ? `, ${settings.bankBranch}` : ""}</dd>
 								<dt className="text-muted">A/C number</dt><dd className="select-all font-medium text-ink">{settings.bankAccount}</dd>
 								<dt className="text-muted">IFSC</dt><dd className="select-all font-medium text-ink">{settings.bankIfsc}</dd>
 							</dl>
-							<p className="mt-2 text-[13px] text-muted">Cash on delivery is not available.</p>
+							<p className="mt-2 text-[14px] text-muted">Cash on delivery is not available.</p>
 						</div>
 
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-							<button onClick={() => setStep("details")} className="border border-line px-4 py-2.5 text-[14px] font-medium text-ink-soft hover:bg-row">← Back</button>
-							<button onClick={() => { setStep("confirm"); window.scrollTo({ top: 0 }); }} className="bg-brand px-5 py-3 text-[15px] font-semibold text-white hover:brightness-110">
+							<button onClick={() => setStep("details")} className="border border-line px-4 py-2.5 text-[15px] font-medium text-ink-soft hover:bg-row">← Back</button>
+							<button onClick={() => { setStep("confirm"); window.scrollTo({ top: 0 }); }} className="bg-brand px-5 py-3 text-[16px] font-semibold text-white hover:brightness-110">
 								I have completed payment →
 							</button>
 						</div>
@@ -363,32 +335,29 @@ export default function CheckoutFlow({
 			{step === "confirm" && (
 				<div className="mx-auto max-w-lg">
 					<h2 className="mb-1 text-lg font-semibold text-ink">Confirm your payment</h2>
-					<p className="mb-5 text-[14px] text-ink-soft">Order <strong>{orderId}</strong> · {money(grand)}. Enter your payment reference and attach the receipt so we can verify it.</p>
+					<p className="mb-5 text-[15px] text-ink-soft">Order <strong>{orderId}</strong> · {money(grand)}. Enter your payment reference and attach the receipt so we can verify it.</p>
 
 					<Field label="Transaction ID / UTR" required={settings.requireUtr} hint="from your GPay/PhonePe/bank receipt">
 						<input value={utr} onChange={(e) => setUtr(e.target.value)} className={inputCls} placeholder="e.g. 4587xxxxxxx" />
 					</Field>
 
 					<div className="mt-4">
-						<span className="mb-1 block text-[13px] font-medium text-ink-soft">Payment receipt screenshot <span className="font-normal text-muted">(recommended)</span></span>
-						<input type="file" accept="image/*" onChange={(e) => onPickScreenshot(e.target.files?.[0])} className="block w-full text-[13px] text-ink-soft file:mr-3 file:border file:border-line file:bg-row file:px-3 file:py-1.5 file:text-[13px]" />
+						<span className="mb-1 block text-[14px] font-medium text-ink-soft">Payment receipt screenshot <span className="font-normal text-muted">(recommended)</span></span>
+						<input type="file" accept="image/*" onChange={(e) => onPickScreenshot(e.target.files?.[0])} className="block w-full text-[14px] text-ink-soft file:mr-3 file:border file:border-line file:bg-row file:px-3 file:py-1.5 file:text-[14px]" />
 						{shot && (
 							<div className="mt-2 flex items-center gap-3">
 								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img src={shot} alt="receipt preview" className="h-20 w-20 border border-line object-cover" />
-								<span className="text-[13px] text-muted">{shotName}</span>
+								<span className="text-[14px] text-muted">{shotName}</span>
 							</div>
 						)}
 					</div>
 
 					<div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-						<button onClick={() => setStep("pay")} className="border border-line px-4 py-2.5 text-[14px] font-medium text-ink-soft hover:bg-row">← Back</button>
-						<button onClick={confirmPayment} disabled={busy} className="bg-brand px-5 py-3 text-[15px] font-semibold text-white hover:brightness-110 disabled:opacity-60">
+						<button onClick={() => setStep("pay")} className="border border-line px-4 py-2.5 text-[15px] font-medium text-ink-soft hover:bg-row">← Back</button>
+						<button onClick={confirmPayment} disabled={busy} className="bg-brand px-5 py-3 text-[16px] font-semibold text-white hover:brightness-110 disabled:opacity-60">
 							{busy ? "Submitting…" : "Submit for verification"}
 						</button>
-						<a href={waLinkTo(settings.whatsapp, message)} target="_blank" rel="noopener" className="inline-flex items-center justify-center gap-2 border border-[#25D366] px-4 py-2.5 text-[14px] font-semibold text-[#128c4b] hover:bg-[#f0fff6]">
-							<WhatsAppIcon className="h-4 w-4" /> Send on WhatsApp instead
-						</a>
 					</div>
 				</div>
 			)}
@@ -397,15 +366,12 @@ export default function CheckoutFlow({
 				<div className="border border-line bg-white p-8 text-center">
 					<div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-[#e8f7ec] text-2xl">✅</div>
 					<h2 className="text-xl font-bold text-ink">Payment submitted for verification</h2>
-					{orderId && <p className="mt-1 text-[14px] text-muted">Order ID: <strong className="text-ink">{orderId}</strong></p>}
-					<p className="mx-auto mt-2 max-w-md text-[15px] leading-6 text-ink-soft">
-						Thank you! Our team will verify your payment and confirm your order shortly. You&apos;ll get a WhatsApp update at each step. 🎇
+					{orderId && <p className="mt-1 text-[15px] text-muted">Order ID: <strong className="text-ink">{orderId}</strong></p>}
+					<p className="mx-auto mt-2 max-w-md text-[16px] leading-6 text-ink-soft">
+						Thank you! Our team will verify your payment and confirm your order shortly. We&apos;ll email you an update at each step, and call you if anything needs checking. 🎇
 					</p>
 					<div className="mt-6 flex flex-wrap justify-center gap-3">
-						<a href={waLinkTo(settings.whatsapp, message)} target="_blank" rel="noopener" className="inline-flex items-center gap-2 border border-[#25D366] px-4 py-2.5 text-[14px] font-semibold text-[#128c4b] hover:bg-[#f0fff6]">
-							<WhatsAppIcon className="h-4 w-4" /> Message us on WhatsApp
-						</a>
-						<Link href="/products" onClick={clear} className="bg-brand px-5 py-2.5 text-[14px] font-semibold text-white hover:brightness-110">Start a new list</Link>
+						<Link href="/products" onClick={clear} className="bg-brand px-5 py-2.5 text-[15px] font-semibold text-white hover:brightness-110">Start a new list</Link>
 					</div>
 				</div>
 			)}
@@ -415,7 +381,7 @@ export default function CheckoutFlow({
 
 /* ---------- helpers ---------- */
 
-const inputCls = "w-full border border-line bg-white px-3 py-2 text-[15px] text-ink focus:border-brand focus:outline-none";
+const inputCls = "w-full border border-line bg-white px-3 py-2 text-[16px] text-ink focus:border-brand focus:outline-none";
 
 function validate(d: Details, cities: string[]) {
 	const e: Partial<Record<keyof Details, string>> = {};
@@ -439,7 +405,7 @@ function Stepper({ step }: { step: Step }) {
 	const order: Step[] = ["details", "pay", "confirm", "done"];
 	const activeIndex = Math.min(order.indexOf(step), 2);
 	return (
-		<div className="mb-6 flex items-center gap-2 text-[13px] font-semibold">
+		<div className="mb-6 flex items-center gap-2 text-[14px] font-semibold">
 			{steps.map((s, i) => (
 				<div key={s.id} className="flex items-center gap-2">
 					<span className={`grid h-7 w-7 place-items-center rounded-full ${i <= activeIndex ? "bg-brand text-white" : "bg-row text-muted"}`}>{i + 1}</span>
@@ -454,13 +420,13 @@ function Stepper({ step }: { step: Step }) {
 function Field({ label, required, hint, error, children }: { label: string; required?: boolean; hint?: string; error?: string; children: React.ReactNode }) {
 	return (
 		<label className="block">
-			<span className="mb-1 block text-[13px] font-medium text-ink-soft">
+			<span className="mb-1 block text-[14px] font-medium text-ink-soft">
 				{label}
 				{required && <span className="text-brand"> *</span>}
 				{hint && <span className="ml-1 font-normal text-muted">({hint})</span>}
 			</span>
 			{children}
-			{error && <span className="mt-1 block text-[12px] text-brand">{error}</span>}
+			{error && <span className="mt-1 block text-[13px] text-brand">{error}</span>}
 		</label>
 	);
 }
@@ -479,7 +445,7 @@ function OrderSummary({ items, totals, gst, gstPct, transport, state, hasPrices,
 	const belowMin = hasPrices && totals.net < minOrder;
 	return (
 		<aside className="h-max border border-line bg-shell p-4">
-			<h3 className="mb-3 border-b border-line pb-2 text-[15px] font-semibold text-ink">Your list ({totals.items} {totals.items === 1 ? "item" : "items"})</h3>
+			<h3 className="mb-3 border-b border-line pb-2 text-[16px] font-semibold text-ink">Your list ({totals.items} {totals.items === 1 ? "item" : "items"})</h3>
 			<ul className="max-h-64 space-y-2 overflow-y-auto pr-1 text-[13.5px]">
 				{items.map((l) => (
 					<li key={l.product.id} className="flex justify-between gap-2">
@@ -488,7 +454,7 @@ function OrderSummary({ items, totals, gst, gstPct, transport, state, hasPrices,
 					</li>
 				))}
 			</ul>
-			<div className="mt-3 space-y-1 border-t border-line pt-3 text-[14px]">
+			<div className="mt-3 space-y-1 border-t border-line pt-3 text-[15px]">
 				<Row k="Subtotal" v={hasPrices ? money(totals.net) : "TBC"} />
 				{gstPct > 0 && <Row k={`GST (${gstPct}%)`} v={money(gst)} />}
 				<Row k="Transport" v={state ? money(transport) : "Select state"} muted={!state} />
@@ -496,7 +462,7 @@ function OrderSummary({ items, totals, gst, gstPct, transport, state, hasPrices,
 					<span>Grand total</span>
 					<span className="text-brand">{hasPrices && state ? money(grand) : "—"}</span>
 				</div>
-				{belowMin && <p className="pt-1 text-[12px] text-brand">Minimum order {money(minOrder)}.</p>}
+				{belowMin && <p className="pt-1 text-[13px] text-brand">Minimum order {money(minOrder)}.</p>}
 			</div>
 		</aside>
 	);

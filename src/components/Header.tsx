@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { SITE, telLink, waLink } from "@/lib/site";
-import { WhatsAppIcon, PhoneIcon, MailIcon } from "@/components/icons";
+import { type PublicSite, telLinkTo, waLinkTo } from "@/lib/site";
+import { PhoneIcon, MailIcon, SparkBurst } from "@/components/icons";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -15,7 +15,7 @@ const NAV = [
   { href: "/contact", label: "Contact Us" },
 ];
 
-export default function Header() {
+export default function Header({ site }: { site: PublicSite }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -27,35 +27,25 @@ export default function Header() {
     <>
       <header>
       {/* ---- utility bar ---- */}
-      <div className="bg-brand-deep text-white text-[13px]">
+      <div className="bg-brand-deep text-white text-[14px]">
         <div className="mx-auto flex max-w-[1170px] flex-wrap items-center justify-between gap-2 px-4 py-1.5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <a href={telLink()} className="inline-flex items-center gap-1.5 hover:text-yellow">
-              <PhoneIcon className="h-3.5 w-3.5" /> {SITE.phone}
+            <a href={telLinkTo(site.phone)} className="inline-flex items-center gap-1.5 hover:text-yellow">
+              <PhoneIcon className="h-3.5 w-3.5" /> {site.phone}
             </a>
             <a
-              href={`mailto:${SITE.email}`}
+              href={`mailto:${site.email}`}
               className="hidden items-center gap-1.5 hover:text-yellow sm:inline-flex"
             >
-              <MailIcon className="h-3.5 w-3.5" /> {SITE.email}
+              <MailIcon className="h-3.5 w-3.5" /> {site.email}
             </a>
             <span className="hidden font-medium tracking-wide opacity-80 md:inline">
-              {SITE.shortName}
+              {site.shortName}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/products" className="btn-outline">
-              Price List
-            </Link>
-            <a
-              href={waLink(`Hi ${SITE.name}, I'd like to place an order.`)}
-              target="_blank"
-              rel="noopener"
-              className="btn-yellow px-3! py-1! text-[13px]!"
-            >
-              ORDER NOW
-            </a>
-          </div>
+          <span className="hidden items-center gap-1.5 text-[13.5px] text-yellow/90 sm:inline-flex">
+            <SparkBurst className="h-3.5 w-3.5" /> Booking open · Deepavali 2026
+          </span>
         </div>
       </div>
 
@@ -63,9 +53,9 @@ export default function Header() {
       <div className="bg-brand-dark">
         <div className="mx-auto flex max-w-[1170px] items-center gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-3">
-            {/* Real Standard Fireworks wordmark. On a white chip so the red letters
-                stay crisp against the dark-red bar. */}
-            <span className="flex-none rounded bg-white px-2 py-1 shadow-sm">
+            {/* Real Standard Fireworks wordmark — floated on a soft gold halo
+                (no white box; the old chip looked cheap). */}
+            <span className="logo-halo logo-halo--sm flex-none">
               <Image
                 src="/brand-logo.png"
                 alt="Standard Fireworks"
@@ -76,11 +66,11 @@ export default function Header() {
               />
             </span>
             <span className="leading-tight">
-              <span className="block text-[13px] font-semibold tracking-[0.25em] text-yellow">
-                SIVAKASI · AVADI
+              <span className="block text-[14px] font-semibold tracking-[0.25em] text-yellow">
+                SIVAKASI · CHENNAI
               </span>
-              <span className="block text-[11px] tracking-wide text-white/70">
-                Wholesale crackers, delivered
+              <span className="block text-[12px] tracking-wide text-white/70">
+                Wholesale/retail crackers, delivered
               </span>
             </span>
           </Link>
@@ -95,6 +85,7 @@ export default function Header() {
           between desktop and mobile silently buries that bar. */}
       <nav className="sticky top-0 z-50 bg-nav shadow-sm">
         <div className="mx-auto flex h-11 max-w-[1170px] items-center justify-between px-4">
+          {/* left: links (desktop) / hamburger (mobile) */}
           <ul className="hidden h-full md:flex">
             {NAV.map((n) => {
               const active = pathname === n.href;
@@ -102,7 +93,7 @@ export default function Header() {
                 <li key={n.href}>
                   <Link
                     href={n.href}
-                    className={`flex h-full items-center px-4 text-[15px] font-medium transition-colors ${
+                    className={`flex h-full items-center px-4 text-[16px] font-medium transition-colors ${
                       active
                         ? "bg-brand text-white"
                         : "text-white/80 hover:bg-white/10 hover:text-white"
@@ -114,8 +105,6 @@ export default function Header() {
               );
             })}
           </ul>
-
-          {/* mobile */}
           <button
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
@@ -124,14 +113,24 @@ export default function Header() {
           >
             {open ? "×" : "☰"}
           </button>
-          <a
-            href={waLink(`Hi ${SITE.name}, I'd like to enquire.`)}
-            target="_blank"
-            rel="noopener"
-            className="inline-flex items-center gap-1.5 py-2 text-[14px] font-semibold text-yellow md:hidden"
-          >
-            <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-          </a>
+
+          {/* right: sticky actions — travel with the header on scroll */}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/products"
+              className="hidden rounded-md border border-white/40 px-3 py-1.5 text-[14px] font-semibold text-white transition-colors hover:bg-white/10 sm:inline-flex"
+            >
+              Price List
+            </Link>
+            <a
+              href={waLinkTo(site.whatsapp, `Hi ${site.name}, I'd like to place an order.`)}
+              target="_blank"
+              rel="noopener"
+              className="btn-yellow shimmer px-3! py-1.5! text-[13.5px]!"
+            >
+              <SparkBurst className="h-3.5 w-3.5" /> Order Now
+            </a>
+          </div>
         </div>
 
         {open && (

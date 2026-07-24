@@ -111,7 +111,7 @@ export default function EstimateBuilder({
 								{l.name}
 							</span>
 							<span
-								className={`mt-0.5 text-[13px] font-medium ${
+								className={`mt-0.5 text-[14px] font-medium ${
 									active ? "text-white/85" : "text-muted"
 								}`}
 							>
@@ -119,7 +119,7 @@ export default function EstimateBuilder({
 							</span>
 							{picked > 0 && (
 								<span
-									className={`absolute right-2 top-2 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[12px] font-bold ${
+									className={`absolute right-2 top-2 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[13px] font-bold ${
 										active ? "bg-white text-brand" : "bg-brand text-white"
 									}`}
 									title={`${picked} item${picked > 1 ? "s" : ""} selected in this range`}
@@ -145,7 +145,7 @@ export default function EstimateBuilder({
 						<button
 							onClick={clear}
 							disabled={totals.items === 0}
-							className="border border-line px-3 py-2 text-[14px] font-medium text-ink-soft hover:bg-row disabled:cursor-not-allowed disabled:opacity-40"
+							className="border border-line px-3 py-2 text-[15px] font-medium text-ink-soft hover:bg-row disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							Clear
 						</button>
@@ -153,21 +153,21 @@ export default function EstimateBuilder({
 							href={waLinkTo(settings.whatsapp, message)}
 							target="_blank"
 							rel="noopener"
-							className="inline-flex items-center gap-1.5 border border-[#25D366] px-3 py-2 text-[14px] font-semibold text-[#128c4b] hover:bg-[#f0fff6]"
+							className="inline-flex items-center gap-1.5 border border-[#25D366] px-3 py-2 text-[15px] font-semibold text-[#128c4b] hover:bg-[#f0fff6]"
 						>
 							<WhatsAppIcon className="h-4 w-4" /> Ask on WhatsApp
 						</a>
 						{totals.items > 0 ? (
 							<Link
 								href="/checkout"
-								className="inline-flex items-center gap-1.5 bg-brand px-5 py-2 text-[14px] font-semibold text-white shadow-sm hover:brightness-110"
+								className="inline-flex items-center gap-1.5 bg-brand px-5 py-2 text-[15px] font-semibold text-white shadow-sm hover:brightness-110"
 							>
 								Proceed to Checkout →
 							</Link>
 						) : (
 							<span
 								aria-disabled
-								className="inline-flex cursor-not-allowed items-center gap-1.5 bg-brand/40 px-5 py-2 text-[14px] font-semibold text-white"
+								className="inline-flex cursor-not-allowed items-center gap-1.5 bg-brand/40 px-5 py-2 text-[15px] font-semibold text-white"
 							>
 								Proceed to Checkout →
 							</span>
@@ -175,12 +175,12 @@ export default function EstimateBuilder({
 					</div>
 				</div>
 				{belowMin ? (
-					<p className="border-t border-line bg-[#fff6f6] px-4 py-2 text-[14px] text-brand">
+					<p className="border-t border-line bg-[#fff6f6] px-4 py-2 text-[15px] text-brand">
 						⚠️ Minimum order is {money(settings.minOrder)} — add{" "}
 						{money(settings.minOrder - totals.net)} more to send your list.
 					</p>
 				) : (
-					<p className="border-t border-line bg-row px-4 py-2 text-[14px] text-muted">
+					<p className="border-t border-line bg-row px-4 py-2 text-[15px] text-muted">
 						Minimum order {money(settings.minOrder)}. Transport is quoted separately when we
 						call you.
 					</p>
@@ -193,7 +193,7 @@ export default function EstimateBuilder({
 					<button
 						key={c.id}
 						onClick={() => setTab(c.id)}
-						className={`whitespace-nowrap border px-3 py-1.5 text-[14px] font-medium transition-colors ${
+						className={`whitespace-nowrap border px-3 py-1.5 text-[15px] font-medium transition-colors ${
 							tab === c.id
 								? "border-brand bg-brand text-white"
 								: "border-line bg-white text-ink-soft hover:bg-row"
@@ -217,18 +217,20 @@ export default function EstimateBuilder({
 							<CategoryIcon id={c.id} className="h-5 w-5 text-brand" /> {c.name}
 						</h3>
 						<div className="overflow-x-auto border border-line">
-							<table className="w-full min-w-[640px] table-fixed border-collapse text-[15px]">
+							<table className="w-full min-w-[760px] table-fixed border-collapse text-[16px]">
 								{/* Fixed widths so every category table lines up identically. */}
 								<colgroup>
 									<col className="w-auto" />
+									<col className="w-[150px]" />
 									<col className="w-[110px]" />
 									<col className="w-[110px]" />
-									<col className="w-[90px]" />
+									<col className="w-[96px]" />
 									<col className="w-[110px]" />
 								</colgroup>
 								<thead>
-									<tr className="bg-shell text-left text-[13px] uppercase tracking-wide text-ink-soft">
+									<tr className="bg-shell text-left text-[14px] uppercase tracking-wide text-ink-soft">
 										<th className="px-3 py-2.5 font-semibold">Product</th>
+										<th className="px-3 py-2.5 font-semibold">Content</th>
 										<th className="px-3 py-2.5 font-semibold">List price</th>
 										<th className="px-3 py-2.5 font-semibold">Your price</th>
 										<th className="px-3 py-2.5 font-semibold">Qty</th>
@@ -250,16 +252,16 @@ export default function EstimateBuilder({
 															<span className="block font-medium text-ink">
 																{p.name}
 																{soldOut && (
-																	<span className="ml-1.5 rounded-sm bg-[#fdecec] px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+																	<span className="ml-1.5 rounded-sm bg-[#fdecec] px-1.5 py-0.5 text-[12px] font-semibold text-brand">
 																		SOLD OUT
 																	</span>
 																)}
 															</span>
-															<span className="block text-[13px] text-muted">
-																{p.content}
-															</span>
 														</span>
 													</div>
+												</td>
+												<td className="px-3 py-2.5 text-[15px] text-ink-soft">
+													{p.content || "—"}
 												</td>
 												<td className="px-3 py-2.5 text-muted line-through">
 													{p.mrp ? money(p.mrp) : "—"}
@@ -316,7 +318,7 @@ function Stat({
 }) {
 	return (
 		<div>
-			<p className="text-[12px] font-semibold uppercase tracking-wider text-muted">{label}</p>
+			<p className="text-[13px] font-semibold uppercase tracking-wider text-muted">{label}</p>
 			<p
 				className={`text-lg font-bold ${
 					strike ? "text-muted line-through" : accent ? "text-brand" : green ? "text-[#1a7f37]" : "text-ink"

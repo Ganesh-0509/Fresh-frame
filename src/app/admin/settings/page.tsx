@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSettings } from "@/lib/catalog";
-import { waConfigured } from "@/lib/whatsapp";
-import { saveSettingsAction } from "./actions";
+import { emailConfigured, ownerEmail } from "@/lib/email";
+import { saveSettingsAction, sendTestEmailAction } from "./actions";
 import ImageInput from "./ImageInput";
 
 export const dynamic = "force-dynamic";
@@ -9,12 +9,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettings({
 	searchParams,
 }: {
-	searchParams: Promise<{ saved?: string }>;
+	searchParams: Promise<{ saved?: string; test?: string }>;
 }) {
 	await requireAdmin();
 	const s = await getSettings();
-	const meta = waConfigured();
-	const { saved } = await searchParams;
+	const mail = emailConfigured();
+	const inbox = ownerEmail();
+	const { saved, test } = await searchParams;
 
 	return (
 		<div>
@@ -32,17 +33,39 @@ export default async function AdminSettings({
 
 			<div className="mb-6 rounded border border-white/10 bg-white/5 p-4">
 				<h2 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-white/50">
-					WhatsApp automation (Meta)
+					Email notifications (Resend)
 				</h2>
-				<div className="flex items-center gap-2">
-					<span className={`h-2.5 w-2.5 rounded-full ${meta ? "bg-emerald-400" : "bg-red-400"}`} />
-					<span className="font-semibold">{meta ? "Connected" : "Not connected"}</span>
+				<div className="flex flex-wrap items-center gap-2">
+					<span className={`h-2.5 w-2.5 rounded-full ${mail ? "bg-emerald-400" : "bg-red-400"}`} />
+					<span className="font-semibold">{mail ? "Connected" : "Not connected"}</span>
 					<span className="text-[13px] text-white/50">
-						{meta
-							? "— status updates can auto-send."
-							: "— add Meta tokens as Worker secrets to enable auto-messaging."}
+						{mail
+							? `— new orders and status updates auto-send; owner alerts go to ${inbox}.`
+							: "— add RESEND_API_KEY + EMAIL_FROM as secrets to enable auto-email."}
 					</span>
 				</div>
+
+				{test === "ok" && (
+					<p className="mt-3 rounded border border-emerald-400/30 bg-emerald-400/10 p-2.5 text-[13.5px] text-emerald-200">
+						✓ Test email sent to {inbox}. Check that inbox (and spam) — if it arrived, email is working.
+					</p>
+				)}
+				{test === "fail" && (
+					<p className="mt-3 rounded border border-red-400/30 bg-red-400/10 p-2.5 text-[13.5px] text-red-200">
+						✕ Send failed. Usually means the domain in EMAIL_FROM isn&apos;t verified in Resend yet, or the API key is wrong.
+					</p>
+				)}
+				{test === "unconfigured" && (
+					<p className="mt-3 rounded border border-yellow/30 bg-yellow/10 p-2.5 text-[13.5px] text-yellow">
+						Email isn&apos;t set up yet — add the RESEND_API_KEY + EMAIL_FROM secrets first.
+					</p>
+				)}
+
+				<form action={sendTestEmailAction} className="mt-3">
+					<button className="rounded border border-white/20 px-3 py-1.5 text-[13px] font-semibold text-white/80 hover:bg-white/10">
+						Send test email
+					</button>
+				</form>
 			</div>
 
 			<form action={saveSettingsAction} className="space-y-6">
@@ -121,6 +144,96 @@ export default async function AdminSettings({
 								</label>
 							</div>
 						))}
+					</div>
+				</Section>
+
+				<Section title="Business identity (shown in header, footer & contact)">
+					<Field name="tagline" label="Tagline" def={s.tagline} />
+					<Field name="hours" label="Opening hours" def={s.hours} />
+					<Field name="addressLine" label="Address line" def={s.addressLine} />
+					<Field name="legalName" label="Registered / firm name" def={s.legalName} />
+					<Field name="gstNumber" label="GSTIN (blank = hidden)" def={s.gstNumber} />
+					<Field name="licence" label="Explosives licence no. (blank = hidden)" def={s.licence} />
+					<div className="sm:col-span-2">
+						<Field
+							name="stockistOf"
+							label="Brand we stock (only if allowed in writing — blank = hidden)"
+							def={s.stockistOf}
+						/>
+					</div>
+				</Section>
+
+				<Section title="Buy more · save more slabs (hero)">
+					<div className="sm:col-span-2 space-y-2">
+						<p className="text-[12.5px] text-white/50">
+							Extra % off when a customer spends at least ₹X. Leave the spend blank to
+							remove a slab. Up to 4.
+						</p>
+						{[0, 1, 2, 3].map((i) => {
+							const t = s.discountTiers[i];
+							return (
+								<div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_2fr]">
+									<label className="text-[12.5px] text-white/60">
+										Spend at least ₹
+										<input
+											name={`tierMin::${i}`}
+											type="number"
+											min={0}
+											defaultValue={t?.min ?? ""}
+											className="mt-1 w-full rounded border border-white/20 bg-white/5 px-2 py-1.5 text-white outline-none focus:border-brand"
+										/>
+									</label>
+									<label className="text-[12.5px] text-white/60">
+										Extra % off
+										<input
+											name={`tierExtra::${i}`}
+											type="number"
+											min={0}
+											defaultValue={t?.extra ?? ""}
+											className="mt-1 w-full rounded border border-white/20 bg-white/5 px-2 py-1.5 text-white outline-none focus:border-brand"
+										/>
+									</label>
+									<label className="text-[12.5px] text-white/60">
+										Label (blank = auto)
+										<input
+											name={`tierLabel::${i}`}
+											defaultValue={t?.label ?? ""}
+											className="mt-1 w-full rounded border border-white/20 bg-white/5 px-2 py-1.5 text-white outline-none focus:border-brand"
+										/>
+									</label>
+								</div>
+							);
+						})}
+					</div>
+				</Section>
+
+				<Section title="Social links (blank = hidden)">
+					<Field name="instagram" label="Instagram URL" def={s.instagram} />
+					<Field name="facebook" label="Facebook URL" def={s.facebook} />
+					<Field name="youtube" label="YouTube URL" def={s.youtube} />
+				</Section>
+
+				<Section title="About-page story">
+					<div className="sm:col-span-2">
+						<label className="block text-[13px] text-white/70">
+							Your story (leave a blank line between paragraphs)
+							<textarea
+								name="aboutStory"
+								defaultValue={s.aboutStory}
+								rows={8}
+								className="mt-1 w-full rounded border border-white/20 bg-white/5 px-3 py-2 text-white outline-none focus:border-brand"
+							/>
+						</label>
+					</div>
+				</Section>
+
+				<Section title="Announcement bar (scrolling text under the hero)">
+					<div className="sm:col-span-2">
+						<Field
+							name="announcement"
+							label="Announcement message (e.g. season / offer)"
+							def={s.announcement}
+						/>
 					</div>
 				</Section>
 

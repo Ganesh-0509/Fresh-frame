@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import { SITE, money } from "@/lib/site";
+import { money, publicSite, type PublicSite } from "@/lib/site";
+import { getSettings } from "@/lib/catalog";
 
 export const metadata: Metadata = {
 	title: "FAQ",
 	description:
-		"How ordering, delivery and payment work. Answers on green crackers, transport, minimum order and the legal rules on firecracker sale in India.",
+		"How ordering, delivery and payment work. Answers on green crackers, transport, minimum order, bulk orders and the legal rules on firecracker sale in India.",
 };
+
+export const dynamic = "force-dynamic";
 
 type QA = { q: string; a: React.ReactNode };
 
-const GROUPS: { heading: string; items: QA[] }[] = [
+function buildGroups(site: PublicSite): { heading: string; items: QA[] }[] {
+	return [
 	{
 		heading: "Ordering",
 		items: [
@@ -46,7 +50,7 @@ const GROUPS: { heading: string; items: QA[] }[] = [
 				q: "Is there a minimum order?",
 				a: (
 					<>
-						Yes — <strong>{money(SITE.minOrder)}</strong>. Below that, transport costs
+						Yes — <strong>{money(site.minOrder)}</strong>. Below that, transport costs
 						more than the crackers do, so it isn&apos;t worth it for either of us.
 					</>
 				),
@@ -58,6 +62,18 @@ const GROUPS: { heading: string; items: QA[] }[] = [
 			{
 				q: "Can I change my list after sending it?",
 				a: "Of course — until you've confirmed on the call and paid the advance, nothing is locked. Just message us the change.",
+			},
+			{
+				q: "Do you have a physical shop I can visit?",
+				a: "We work direct from our stock point, not a retail showroom — that's exactly why our rate is what it is. If you'd like to see popular items before deciding, ask on WhatsApp and we'll share photos and a short video of what's in stock.",
+			},
+			{
+				q: "How do I know my WhatsApp list actually reached you?",
+				a: "You'll see it delivered in your own WhatsApp, and we reply to confirm we've received it — usually within a couple of hours in season. If you haven't heard back by the next morning, message again or call; sometimes the rush is real.",
+			},
+			{
+				q: "Can I order for someone else / send it to a different address?",
+				a: "Yes. Tell us on the call whose name the transport receipt (LR) should be in and which transport office is nearest to the person collecting it. Whoever collects needs their ID and the LR number.",
 			},
 		],
 	},
@@ -79,18 +95,30 @@ const GROUPS: { heading: string; items: QA[] }[] = [
 				q: "Is cash on delivery available?",
 				a: "No. Goods transport operators don't collect payment on our behalf, so orders are settled before dispatch.",
 			},
+			{
+				q: "Do I have to pay the full amount up front?",
+				a: "We take a part-advance to confirm and pack your order, and the balance before dispatch — the exact split we'll agree with you on the call. We don't dispatch anything that isn't fully settled, so there's no surprise at the depot.",
+			},
 			{ q: "Will I get a bill?", a: "Yes — a proper GST invoice with every order." },
+			{
+				q: "What if I need to cancel after paying the advance?",
+				a: "Talk to us as early as you can. If we haven't packed and booked your parcel yet, we'll sort out a fair adjustment. Once it's packed and handed to transport, it can't be pulled back — crackers can't simply be restocked and re-sold freely.",
+			},
+			{
+				q: "Are UPI and bank transfer the only options?",
+				a: "For now, yes — UPI (Google Pay / PhonePe / Paytm) or a direct bank transfer. Both give you an instant record of payment, which protects you as much as us.",
+			},
 		],
 	},
 	{
-		heading: "Delivery",
+		heading: "Delivery & transport",
 		items: [
 			{
 				q: "Where do you deliver?",
 				a: (
 					<>
 						To your nearest <strong>transport office</strong> across{" "}
-						{SITE.serviceStates.join(", ")}. You collect your parcel from the depot with
+						{site.serviceStates.join(", ")}. You collect your parcel from the depot with
 						your ID and the LR number we send you. We&apos;ll tell you the exact office
 						when we call.
 					</>
@@ -101,6 +129,10 @@ const GROUPS: { heading: string; items: QA[] }[] = [
 				a: "Because it's illegal, not because we don't want to. Fireworks are explosives — they're a prohibited item in the post, and DHL, FedEx, Professional Courier and the rest all refuse flammable goods. Every genuine Sivakasi seller ships by goods transport to a depot. Anyone promising doorstep courier delivery of crackers is either lying or breaking the law.",
 			},
 			{
+				q: "How much is transport?",
+				a: "It depends on the destination and the size of the parcel, and it's added to your estimate before you confirm — never a hidden extra sprung on you at the depot. For nearby Tamil Nadu it's modest; the further out, the more the lorry charges.",
+			},
+			{
 				q: "Do you deliver to Delhi / NCR?",
 				a: "No. Firecracker sale in Delhi-NCR is restricted by ongoing Supreme Court orders that change from year to year, and crackers may not be brought into the region from outside. We also don't send to any other state where sale is banned at the time of your order.",
 			},
@@ -108,10 +140,18 @@ const GROUPS: { heading: string; items: QA[] }[] = [
 				q: "How long does it take?",
 				a: "Within Tamil Nadu, typically 2–3 days after dispatch. Elsewhere in South India, 3–6 days. During the Deepavali rush, add a few days — the lorries are as busy as we are.",
 			},
+			{
+				q: "What if my parcel arrives damaged?",
+				a: "Check it at the depot before you leave, if you can. If something's crushed or missing, call us the same day with a photo and we'll make it right. We pack for the road precisely so this rarely happens.",
+			},
+			{
+				q: "How will I know when it has reached the transport office?",
+				a: "We send you the LR (lorry receipt) number when we dispatch, and we message you when the office confirms arrival. Carry your ID and that number to collect.",
+			},
 		],
 	},
 	{
-		heading: "Products & safety",
+		heading: "Green crackers & safety",
 		items: [
 			{
 				q: "Are your crackers green crackers?",
@@ -122,56 +162,143 @@ const GROUPS: { heading: string; items: QA[] }[] = [
 				a: "They're formulations developed by CSIR-NEERI with PESO that drop barium salts and cut particulate emissions by roughly 30–40% compared with conventional crackers. Barium-based crackers are banned nationwide by the Supreme Court.",
 			},
 			{
-				q: `Are the prices really ${SITE.discountPct}% off?`,
-				a: "Our discount is off the printed manufacturer list price, which is how the whole Sivakasi trade quotes. What matters is the number in the 'Your price' column — that's what you actually pay, and it's the same number we'll say on the phone.",
-			},
-			{
 				q: "What's the timing rule for bursting?",
 				a: "Courts set a bursting window each year — in Tamil Nadu it has recently been two one-hour slots, typically early morning and evening. It changes year to year, so check the current year's notification before Deepavali, and keep clear of silence zones near hospitals.",
 			},
+			{
+				q: "How should I store crackers safely at home?",
+				a: "Keep them in a cool, dry place away from any flame, cooking area, or electrical point — a closed box, not loose. Don't stockpile more than you'll use, and keep them well out of children's reach.",
+			},
+			{
+				q: "What safety basics should I follow while bursting?",
+				a: "Light in the open, away from vehicles, dry leaves and gas cylinders — never indoors or on a balcony. Keep a bucket of water and sand within reach, an adult with every child, and never lean over a cracker to relight a dud — soak it instead. Cotton clothing, not synthetics.",
+			},
+			{
+				q: "Are crackers safe for young children to light?",
+				a: "Sparklers and ground items only, and only with an adult standing with them — not merely nearby. Aerial and high-decibel items are for adults. Ear protection is worth it for little ones who are watching.",
+			},
 		],
 	},
-];
+	{
+		heading: "Bulk, temple & corporate orders",
+		items: [
+			{
+				q: "Do you handle large orders for temples, weddings or societies?",
+				a: (
+					<>
+						Yes — that&apos;s a big part of what we do. Send us your list or your budget on{" "}
+						<Link href="/contact" className="text-brand underline">
+							WhatsApp
+						</Link>{" "}
+						and we&apos;ll put together a package and a sharper rate for the volume. Book
+						early for large functions; these get tight first.
+					</>
+				),
+			},
+			{
+				q: "Can you help me build a package to a fixed budget?",
+				a: "Absolutely. Tell us the amount and the occasion — a family Deepavali, a wedding, a temple function — and we'll suggest a balanced mix of sound, aerial, ground and kids' items so nothing's wasted.",
+			},
+			{
+				q: "Do you supply for Christmas, New Year and Pongal too?",
+				a: "Yes. We take orders round the year for Christmas, New Year, Pongal, weddings and temple functions — not only Deepavali.",
+			},
+			{
+				q: "Can you give a GST invoice for a company / institutional order?",
+				a: "Yes — give us your GST number and billing name when you confirm, and we'll raise a proper GST invoice in that name.",
+			},
+		],
+	},
+	{
+		heading: "About us & trust",
+		items: [
+			{
+				q: "Who are you, exactly?",
+				a: (
+					<>
+						A Sivakasi family in the cracker trade for over 12 years. We buy wholesale
+						here and sell direct — no showroom, no middlemen, no commission. More on the{" "}
+						<Link href="/about" className="text-brand underline">
+							About Us
+						</Link>{" "}
+						page.
+					</>
+				),
+			},
+			{
+				q: "Why are you cheaper than the shops?",
+				a: "Because we cut out the steps between the factory and you — no showroom rent, no salesmen, no commission agents. Same boxes the big shops sell, at close to the rate we buy them for. That's the whole model.",
+			},
+			{
+				q: `Is the ${site.discountPct}% discount genuine?`,
+				a: "Our discount is off the printed manufacturer list price, which is how the whole Sivakasi trade quotes. What matters is the number in the 'Your price' column — that's what you actually pay, and it's the same number we'll say on the phone. No invented 'was' price.",
+			},
+			{
+				q: "What if my question isn't answered here?",
+				a: (
+					<>
+						Just{" "}
+						<Link href="/contact" className="text-brand underline">
+							WhatsApp or call us
+						</Link>
+						. A real person answers — no bots, no call centre.
+					</>
+				),
+			},
+		],
+	},
+	];
+}
 
-export default function FaqPage() {
+export default async function FaqPage() {
+	const site = publicSite(await getSettings());
+	const GROUPS = buildGroups(site);
 	return (
 		<>
 			<PageHeader
 				title="Frequently Asked Questions"
-				subtitle="If your question isn't here, just WhatsApp us — a real person answers."
+				subtitle="Everything about ordering, payment, delivery, green crackers, safety and bulk orders. If your question isn't here, just WhatsApp us — a real person answers."
 			/>
 
-			<section className="py-12">
-				<div className="mx-auto max-w-3xl px-4">
-					{GROUPS.map((g) => (
-						<div key={g.heading} className="mb-10">
-							<h2 className="mb-4 border-b-2 border-brand pb-2 text-lg font-semibold text-brand">
-								{g.heading}
-							</h2>
-							<div className="border border-line">
-								{g.items.map((item, i) => (
-									<details
-										key={item.q}
-										className="group border-b border-line last:border-b-0"
-										open={i === 0 && g.heading === "Ordering"}
-									>
-										<summary className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3.5 text-[14px] font-medium text-ink hover:bg-row">
-											{item.q}
-											<span className="flex-none text-xl text-brand transition-transform group-open:rotate-45">
-												+
-											</span>
-										</summary>
-										<div className="px-4 pb-4 text-[15px] leading-7 text-muted">
-											{item.a}
-										</div>
-									</details>
-								))}
+			<section className="py-14">
+				{/* Full-width — the six groups flow across two columns (masonry) so
+				    the page width is used, while each answer stays a readable width. */}
+				<div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
+					<div className="lg:columns-2 lg:gap-8">
+						{GROUPS.map((g) => (
+							<div key={g.heading} className="mb-8 break-inside-avoid lg:inline-block lg:w-full">
+								<h2 className="mb-5 border-b-2 border-brand pb-2 text-2xl font-bold text-brand">
+									{g.heading}
+								</h2>
+								<div className="overflow-hidden rounded-lg border border-line shadow-sm">
+									{g.items.map((item, i) => (
+										<details
+											key={item.q}
+											className="group border-b border-line last:border-b-0"
+											open={i === 0 && g.heading === "Ordering"}
+										>
+											<summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-white px-5 py-4 text-[17px] font-semibold text-ink transition-colors hover:bg-row group-open:bg-row">
+												{item.q}
+												<span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-brand/10 text-xl font-bold text-brand transition-transform group-open:rotate-45">
+													+
+												</span>
+											</summary>
+											<div className="bg-white px-5 pb-5 text-[16px] leading-8 text-ink-soft">
+												{item.a}
+											</div>
+										</details>
+									))}
+								</div>
 							</div>
-						</div>
-					))}
+						))}
+					</div>
 
-					<div className="border-l-4 border-brand bg-row p-5 text-[14.5px] leading-6 text-ink-soft">
-						<strong className="text-ink">⚖️ The legal bit.</strong> Sale and use of
+					<div className="mt-4 rounded-lg border border-line bg-row p-5 text-[15.5px] leading-7 text-ink-soft">
+						<strong className="mb-1 flex items-center gap-2 text-ink">
+							<span className="h-3 w-3 flex-none rounded-[2px] bg-brand" aria-hidden />
+							The legal bit.
+						</strong>{" "}
+						Sale and use of
 						firecrackers in India is governed by orders of the Hon&apos;ble Supreme Court
 						and by the Explosives Act, 1884 and Explosives Rules, 2008. This website does
 						not sell crackers online and does not accept online payment; it is a price

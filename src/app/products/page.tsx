@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PageHeader from "@/components/PageHeader";
 import EstimateBuilder from "@/components/EstimateBuilder";
 import { money } from "@/lib/site";
 import { getCatalog, getSettings } from "@/lib/catalog";
@@ -16,26 +17,18 @@ export default async function ProductsPage() {
 
 	return (
 		<>
-			<section className="border-b border-line bg-shell py-8">
-				<div className="mx-auto max-w-[1170px] px-4">
-					<h1 className="text-2xl font-bold text-ink sm:text-3xl">List of Products</h1>
-					<p className="mt-2 max-w-2xl text-[15px] leading-6 text-ink-soft">
-						Set the quantity against anything you want. Your total updates as you go —
-						then tap <strong>Proceed to Checkout</strong> to fill your details and get
-						payment info. Prefer to ask first? Use <strong>Ask on WhatsApp</strong>.
-					</p>
-				</div>
-			</section>
+			<PageHeader
+				title="Price List"
+				subtitle={`Set a quantity — your total updates live. Minimum order ${money(settings.minOrder)}.`}
+			/>
 
 			<section className="py-8">
-				<div className="mx-auto max-w-[1170px] px-4">
-					<div className="mb-6 border-l-4 border-brand bg-row p-4 text-[14.5px] leading-6 text-ink-soft">
-						<strong className="text-ink">
-							⚖️ Important note: this is an enquiry list, not a shopping cart.
-						</strong>{" "}
-						No payment is taken on this website. We confirm stock and the final amount
-						with you by phone first; payment is arranged offline afterwards, as required
-						for firecracker sales in India. Minimum order {money(settings.minOrder)}.
+				{/* Full-width table — expands to the viewport edges (minus padding). */}
+				<div className="mx-auto w-full px-3 sm:px-5 lg:px-8">
+					<div className="mb-4 rounded-md border border-line bg-row px-4 py-2.5 text-center text-[13.5px] text-muted">
+						<strong className="text-ink">Note:</strong> rates are being finalised for
+						Deepavali 2026. Any item shown as <strong className="text-brand">“—”</strong> —
+						build your list and send it on WhatsApp for today&apos;s best price.
 					</div>
 
 					<EstimateBuilder
@@ -43,6 +36,12 @@ export default async function ProductsPage() {
 						products={catalog.products}
 						settings={settings}
 					/>
+
+					{/* one small honest line — enquiry only, no cart (kept minimal on purpose) */}
+					<p className="mt-8 text-center text-[14px] text-muted">
+						Enquiry list, not a shopping cart — no online payment. We confirm stock &
+						the final amount by phone.
+					</p>
 				</div>
 			</section>
 		</>

@@ -1,8 +1,10 @@
 /**
  * Sivakasi Standard Fireworks — single source of truth for client details.
  *
- * ⚠️ EVERYTHING HERE IS DUMMY DATA. Replace before go-live.
- * Change it here once and the whole site updates.
+ * These are the CODE-LEVEL defaults (name, domain, seed contact info). Almost
+ * everything the owner needs to change is editable at runtime from /admin
+ * (see the `Settings` type below) — those overrides win over these defaults.
+ * Any value still unconfirmed by the client is listed in PLACEHOLDER-DATA.md.
  */
 
 export const SITE = {
@@ -17,9 +19,7 @@ export const SITE = {
   whatsapp: "919344170018", // digits only, country code, no + and no spaces
   email: "standardfireworkssivakasi5@gmail.com",
   address: {
-    line1: "DRR Nagar",
-    line2: "Avadi",
-    line3: "Chennai, Tamil Nadu",
+    line1: "Chennai, Tamil Nadu",
   },
   hours: "Mon–Sun · 10:00 AM – 8:00 PM",
 
@@ -85,6 +85,8 @@ export const sellPrice = (listPrice: number) =>
  * Editable-at-runtime settings (overridable from the admin panel → D1).
  * Everything else in SITE is code-level. Defaults come from SITE.
  */
+export type DiscountTier = { min: number; extra: number; label: string };
+
 export type Settings = {
   phone: string;
   whatsapp: string;
@@ -112,6 +114,24 @@ export type Settings = {
   metaDescription: string;
   // Logo (data URL uploaded from admin). "" = built-in brand mark.
   logo: string;
+  // Scrolling announcement bar under the hero (season/offer message).
+  announcement: string;
+
+  // ---- Business identity / content (all owner-editable) ----
+  tagline: string;
+  hours: string;
+  addressLine: string;
+  legalName: string;
+  gstNumber: string; // GSTIN shown in footer/contact ("" hides it)
+  licence: string; // explosives licence no. ("" hides it)
+  stockistOf: string; // brand name, only if allowed ("" hides)
+  aboutStory: string; // About-page story, paragraphs split on blank lines
+  // Spend-more-save-more slabs shown on the hero.
+  discountTiers: DiscountTier[];
+  // Social links ("" hides the icon).
+  facebook: string;
+  instagram: string;
+  youtube: string;
 };
 
 // ⚠️ Placeholder transport fees + cities — the client sets the real ones in /admin/settings.
@@ -155,7 +175,68 @@ export const DEFAULT_SETTINGS: Settings = {
   metaDescription:
     "Quality crackers direct from Sivakasi at wholesale rates. Browse the price list and order online with doorstep transport across South India.",
   logo: "",
+  announcement:
+    "BOOKING OPEN FOR DEEPAVALI 2026 · BOOK EARLY FOR BEST STOCK · FREE TRANSPORT-OFFICE DELIVERY ACROSS SOUTH INDIA",
+
+  tagline: SITE.tagline,
+  hours: SITE.hours,
+  addressLine: SITE.address.line1,
+  legalName: SITE.legalName,
+  gstNumber: SITE.gst,
+  licence: SITE.licence,
+  stockistOf: SITE.stockistOf,
+  aboutStory:
+    "Murugan Traders has been in the fireworks trade for over 12 years. What began as a small seasonal stall — a few boxes brought up from Sivakasi each Deepavali — has grown, one honest order at a time, into a business that families across Chennai come back to every year.\n\n" +
+    "We buy wholesale straight from established Sivakasi manufacturers and sell direct — to families, temples, schools and function organisers. No showroom rent, no salesmen, no commission agents. That is the whole reason our rate is what it is.\n\n" +
+    "Twelve years on, the promise hasn't changed: the same crackers the big shops sell, at the price we buy them for — and a real person on the other end of the phone.",
+  discountTiers: SITE.discountTiers.map((t) => ({ ...t })),
+  facebook: SITE.facebook,
+  instagram: SITE.instagram,
+  youtube: SITE.youtube,
 };
+
+/**
+ * Live, owner-editable view of the site content. Merges the fixed structural
+ * bits from SITE (name, domain) with everything the owner edits in /admin.
+ * Public pages/components consume THIS (via getSettings), so admin edits show
+ * up immediately on the live site.
+ */
+export function publicSite(s: Settings) {
+  return {
+    name: SITE.name,
+    shortName: SITE.shortName,
+    domain: SITE.domain,
+    tagline: s.tagline,
+    phone: s.phone,
+    whatsapp: s.whatsapp,
+    email: s.email,
+    hours: s.hours,
+    addressLine: s.addressLine,
+    legalName: s.legalName,
+    gst: s.gstNumber,
+    licence: s.licence,
+    stockistOf: s.stockistOf,
+    minOrder: s.minOrder,
+    discountPct: s.discountPct,
+    discountTiers: s.discountTiers,
+    serviceStates: s.serviceStates,
+    bank: {
+      name: s.bankName,
+      branch: s.bankBranch,
+      account: s.bankAccount,
+      ifsc: s.bankIfsc,
+      holder: s.bankHolder,
+    },
+    upi: s.upi,
+    upiQr: s.upiQr,
+    facebook: s.facebook,
+    instagram: s.instagram,
+    youtube: s.youtube,
+    aboutStory: s.aboutStory,
+    announcement: s.announcement,
+  };
+}
+export type PublicSite = ReturnType<typeof publicSite>;
 
 /** GST amount for a subtotal at the given rate. */
 export const gstAmount = (subtotal: number, pct: number) =>
@@ -168,3 +249,5 @@ export const waLink = (message: string) =>
   `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(message)}`;
 
 export const telLink = () => "tel:" + SITE.phone.replace(/\s/g, "");
+
+export const telLinkTo = (phone: string) => "tel:" + phone.replace(/\s/g, "");

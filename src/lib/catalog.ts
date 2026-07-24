@@ -50,6 +50,51 @@ function db() {
 	return drizzle(env.DB, { schema: { categories, products, settingsTable } });
 }
 
+/* ---- DEMO PRICES (production: OFF) ----
+ * During the demo phase, zero-priced products were auto-filled with plausible
+ * numbers so the layout looked populated. For PRODUCTION this is OFF — we never
+ * show a fabricated price to a real customer. A product with no price shows "—"
+ * until the owner enters the real rate in /admin/products.
+ * To temporarily re-enable the populated demo look, set DEMO_PRICES = true.
+ */
+const DEMO_PRICES = false;
+function demoMrp(categoryId: string, id: string): number {
+	const s = (categoryId + "|" + id).toLowerCase();
+	let h = 0;
+	for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+	const pick = (lo: number, hi: number, step: number) =>
+		lo + (h % (Math.floor((hi - lo) / step) + 1)) * step;
+	if (s.includes("sparkler") || s.includes("match")) return pick(30, 130, 10);
+	if (s.includes("gift")) return pick(800, 3200, 100);
+	if (
+		s.includes("chakkar") || s.includes("flower") || s.includes("pot") ||
+		s.includes("fountain") || s.includes("twink")
+	)
+		return pick(80, 320, 20);
+	if (
+		s.includes("rocket") || s.includes("bomb") || s.includes("sound") ||
+		s.includes("comet") || s.includes("peacock")
+	)
+		return pick(120, 520, 20);
+	if (
+		s.includes("cake") || s.includes("multi") || s.includes("shot") ||
+		s.includes("fancy") || s.includes("novel") || s.includes("night") ||
+		s.includes("confetti") || s.includes("smoke")
+	)
+		return pick(300, 1900, 50);
+	return pick(100, 620, 20);
+}
+
+/** Fill zero-priced products with demo prices (display only). No-op in production. */
+function applyDemoPrices(prods: CatProduct[]): CatProduct[] {
+	if (!DEMO_PRICES) return prods;
+	return prods.map((p) => {
+		if (p.price > 0 || p.mrp > 0) return p;
+		const mrp = demoMrp(p.categoryId, p.id);
+		return { ...p, mrp, price: Math.round((mrp * (100 - DEFAULT_SETTINGS.discountPct)) / 100) };
+	});
+}
+
 /* ---- seed data as the fallback catalog ---- */
 function seedCatalog(): Catalog {
 	const cats: CatCategory[] = SEED_CATEGORIES.map((c) => ({
@@ -69,7 +114,7 @@ function seedCatalog(): Catalog {
 		active: true,
 		stock: -1,
 	}));
-	return { categories: cats, products: prods };
+	return { categories: cats, products: applyDemoPrices(prods) };
 }
 
 /** Insert the seed rows if the products table is empty. */
@@ -106,17 +151,19 @@ export async function getCatalog(): Promise<Catalog> {
 		const prods = await d.select().from(products).orderBy(asc(products.sort));
 		return {
 			categories: cats.map((c) => ({ id: c.id, line: c.line as LineId, name: c.name })),
-			products: prods.map((p) => ({
-				id: p.id,
-				categoryId: p.categoryId,
-				line: p.line as LineId,
-				name: p.name,
-				content: p.content,
-				mrp: p.mrp,
-				price: p.price,
-				active: p.active === 1,
-				stock: p.stock,
-			})),
+			products: applyDemoPrices(
+				prods.map((p) => ({
+					id: p.id,
+					categoryId: p.categoryId,
+					line: p.line as LineId,
+					name: p.name,
+					content: p.content,
+					mrp: p.mrp,
+					price: p.price,
+					active: p.active === 1,
+					stock: p.stock,
+				})),
+			),
 		};
 	} catch {
 		return seedCatalog();

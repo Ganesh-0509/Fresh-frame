@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, orders, newOrderId } from "@/lib/db";
+import { sendEmail, ownerEmail, ownerOrderEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -82,6 +83,18 @@ export async function POST(req: NextRequest) {
 	} catch (e) {
 		console.error("order insert failed", e);
 		return NextResponse.json({ error: "Could not save order" }, { status: 500 });
+	}
+
+	// Notify the owner by email (no-op until Resend is configured). Never fails the order.
+	try {
+		const { subject, text } = ownerOrderEmail(
+			{ id, customerName: name, phone, city, state, itemCount, grandTotal, total, hasPrices },
+			"new",
+		);
+		const custEmail = str(body.email);
+		await sendEmail({ to: ownerEmail(), subject, text, replyTo: custEmail || undefined });
+	} catch (e) {
+		console.error("owner notify failed", e);
 	}
 
 	return NextResponse.json({ id });

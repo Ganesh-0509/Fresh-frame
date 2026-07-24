@@ -83,6 +83,149 @@ export function ListIcon({ className }: IconProps) {
 	);
 }
 
+/* ---- Decorative festive glyphs (replace 🪔 / 🎆 emoji) ---- */
+
+/** A hanging brass diya on a thread, flame lit. currentColor = the brass;
+ *  flame is gold. Style with `text-yellow` + the `.diya-glow` flicker. */
+export function HangingLamp({ className }: IconProps) {
+	return (
+		<svg viewBox="0 0 24 52" className={className} role="presentation" fill="none" aria-hidden>
+			<line x1="12" y1="0" x2="12" y2="15" stroke="currentColor" strokeWidth="1.1" opacity="0.55" />
+			<ellipse cx="12" cy="16" rx="2.1" ry="1.4" fill="currentColor" opacity="0.65" />
+			<path d="M12 19 C9.4 23 11 27.2 12 28.8 C13 27.2 14.6 23 12 19 Z" fill="#ffe08a" />
+			<path d="M12 22 C10.9 24 11.6 26.2 12 27 C12.4 26.2 13.1 24 12 22 Z" fill="#f6a41c" />
+			<path d="M4.5 30 H19.5 C18.6 38 5.4 38 4.5 30 Z" fill="currentColor" />
+			<path d="M3.4 30 H20.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+		</svg>
+	);
+}
+
+/** Small firework burst — for buttons / accents (replaces 🎇). */
+export const SparkBurst = svg(
+	<>
+		<circle cx="24" cy="24" r="2" fill="currentColor" stroke="none" />
+		<line x1="24" y1="20" x2="24" y2="11" />
+		<line x1="24" y1="28" x2="24" y2="37" />
+		<line x1="20" y1="24" x2="11" y2="24" />
+		<line x1="28" y1="24" x2="37" y2="24" />
+		<line x1="21" y1="21" x2="14.5" y2="14.5" />
+		<line x1="27" y1="27" x2="33.5" y2="33.5" />
+		<line x1="27" y1="21" x2="33.5" y2="14.5" />
+		<line x1="21" y1="27" x2="14.5" y2="33.5" />
+	</>,
+	"",
+);
+
+/** Chevron for carousel arrows. */
+export const ChevronIcon = svg(<path d="M30 12 L18 24 L30 36" />, "");
+
+/* ---- UI / value glyphs (share the category stroke voice) ---- */
+export const MedalIcon = svg(
+	<>
+		<path d="M18 6 l5 15 M30 6 l-5 15" />
+		<circle cx="24" cy="32" r="11" />
+		<path d="M24 26 l1.9 3.9 4.3.6 -3.1 3 .7 4.3 -3.8-2 -3.8 2 .7-4.3 -3.1-3 4.3-.6 z" />
+	</>,
+	"Quality",
+);
+export const TruckIcon = svg(
+	<>
+		<path d="M5 13 h21 v18 h-21 z" />
+		<path d="M26 19 h8 l6 6 v6 h-14 z" />
+		<circle cx="14" cy="34" r="3.2" />
+		<circle cx="33" cy="34" r="3.2" />
+	</>,
+	"Delivery",
+);
+export const LeafIcon = svg(
+	<>
+		<path d="M11 36 C11 19 28 11 39 11 C39 27 28 38 11 36 Z" />
+		<path d="M11 36 C21 31 29 24 35 16" stroke="#f6a41c" />
+	</>,
+	"Eco friendly",
+);
+export const RupeeCardIcon = svg(
+	<>
+		<rect x="5" y="11" width="38" height="26" rx="3" />
+		<line x1="5" y1="19" x2="43" y2="19" />
+		<path d="M18 24 h11 M18 27.5 h11 M19 24 c6 0 6 7 0 7 l7 5" stroke="#f6a41c" />
+	</>,
+	"Payment",
+);
+export const ShieldIcon = svg(
+	<>
+		<path d="M24 5 l15 5 v11 c0 10 -7 15 -15 18 c-8 -3 -15 -8 -15 -18 v-11 z" />
+		<path d="M17 23 l5 5 9 -10" stroke="#f6a41c" />
+	</>,
+	"Licensed",
+);
+export const TagIcon = svg(
+	<>
+		<path d="M6 24 l17 -17 h16 v16 l-17 17 z" />
+		<circle cx="32" cy="16" r="2.6" fill="currentColor" stroke="none" />
+	</>,
+	"Honest price",
+);
+export const BoxIcon = svg(
+	<>
+		<path d="M24 5 l17 8.5 v21 l-17 8.5 -17 -8.5 v-21 z" />
+		<path d="M7 13.5 l17 8.5 17 -8.5 M24 22 v21" />
+	</>,
+	"Packed",
+);
+export const EyeIcon = svg(
+	<>
+		<path d="M5 24 C12 14 36 14 43 24 C36 34 12 34 5 24 Z" />
+		<circle cx="24" cy="24" r="4.5" fill="currentColor" stroke="none" />
+	</>,
+	"Adult supervision",
+);
+export const BucketIcon = svg(
+	<>
+		<path d="M11 17 h26 l-3 23 h-20 z" />
+		<path d="M11 17 c0 -5 26 -5 26 0" />
+		<path d="M17 27 c3 3 11 3 14 0" stroke="#f6a41c" />
+	</>,
+	"Keep water ready",
+);
+export const NoIcon = svg(
+	<>
+		<circle cx="24" cy="24" r="17" />
+		<line x1="12" y1="12" x2="36" y2="36" stroke="#f6a41c" />
+	</>,
+	"Never relight a dud",
+);
+export const ShirtIcon = svg(
+	<path d="M18 7 l6 5 6 -5 8 5 -4 8 -4 -2 v22 h-12 v-22 l-4 2 -4 -8 z" />,
+	"Cotton clothing",
+);
+export const ExpandIcon = svg(
+	<path d="M10 19 v-9 h9 M38 19 v-9 h-9 M10 29 v9 h9 M38 29 v9 h-9" />,
+	"Open space",
+);
+export const ClockIcon = svg(
+	<>
+		<circle cx="24" cy="24" r="17" />
+		<path d="M24 13 v11 l8 5" stroke="#f6a41c" />
+	</>,
+	"Timing",
+);
+export const PinIcon = svg(
+	<>
+		<path d="M24 43 C15 32 11 26 11 20 a13 13 0 0 1 26 0 c0 6 -4 12 -13 23 Z" />
+		<circle cx="24" cy="20" r="4.5" fill="currentColor" stroke="none" />
+	</>,
+	"Address",
+);
+export const ChatIcon = svg(
+	<>
+		<path d="M8 10 h32 v22 h-20 l-8 8 v-8 h-4 z" />
+		<line x1="15" y1="18" x2="33" y2="18" stroke="#f6a41c" />
+		<line x1="15" y1="24" x2="27" y2="24" stroke="#f6a41c" />
+	</>,
+	"Message",
+);
+
 /* ---- Category icons ---- */
 const Sparklers = svg(
 	<>

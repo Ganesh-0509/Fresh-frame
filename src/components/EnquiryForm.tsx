@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SITE, telLink, waLink } from "@/lib/site";
+import { telLinkTo, waLinkTo } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/icons";
 
 const OCCASIONS = [
@@ -12,7 +12,15 @@ const OCCASIONS = [
 	"Other",
 ];
 
-export default function EnquiryForm() {
+export default function EnquiryForm({
+	whatsapp,
+	phone,
+	brand,
+}: {
+	whatsapp: string;
+	phone: string;
+	brand: string;
+}) {
 	const [sent, setSent] = useState(false);
 
 	function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -21,21 +29,21 @@ export default function EnquiryForm() {
 		const get = (k: string) => String(f.get(k) ?? "").trim();
 
 		const message =
-			`Hi ${SITE.name}, I'd like to enquire.\n\n` +
+			`Hi ${brand}, I'd like to enquire.\n\n` +
 			`*Name:* ${get("name")}\n` +
 			`*Phone:* ${get("phone")}\n` +
 			(get("city") ? `*Delivering to:* ${get("city")}\n` : "") +
 			`*Occasion:* ${get("occasion")}\n` +
 			(get("message") ? `\n${get("message")}` : "");
 
-		window.open(waLink(message), "_blank", "noopener");
+		window.open(waLinkTo(whatsapp, message), "_blank", "noopener");
 		setSent(true);
 	}
 
 	return (
 		<div className="border border-line bg-white p-6">
 			<h2 className="text-lg font-semibold text-ink">Send an enquiry</h2>
-			<p className="mt-1 text-[14px] text-muted">
+			<p className="mt-1 text-[15px] text-muted">
 				This opens WhatsApp with your message ready to send. Nothing is ordered or charged
 				here.
 			</p>
@@ -58,7 +66,7 @@ export default function EnquiryForm() {
 				<div>
 					<label
 						htmlFor="occasion"
-						className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-ink-soft"
+						className="mb-1.5 block text-[14px] font-semibold uppercase tracking-wider text-ink-soft"
 					>
 						Occasion
 					</label>
@@ -66,7 +74,7 @@ export default function EnquiryForm() {
 						id="occasion"
 						name="occasion"
 						defaultValue={OCCASIONS[0]}
-						className="w-full border border-line px-3 py-2.5 text-[15px] focus:border-brand focus:outline-none"
+						className="w-full border border-line px-3 py-2.5 text-[16px] focus:border-brand focus:outline-none"
 					>
 						{OCCASIONS.map((o) => (
 							<option key={o}>{o}</option>
@@ -77,7 +85,7 @@ export default function EnquiryForm() {
 				<div>
 					<label
 						htmlFor="message"
-						className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-ink-soft"
+						className="mb-1.5 block text-[14px] font-semibold uppercase tracking-wider text-ink-soft"
 					>
 						What do you need?
 					</label>
@@ -86,48 +94,31 @@ export default function EnquiryForm() {
 						name="message"
 						rows={4}
 						placeholder="Rough budget, family size, or paste your list from the price list page…"
-						className="w-full border border-line px-3 py-2.5 text-[15px] focus:border-brand focus:outline-none"
+						className="w-full border border-line px-3 py-2.5 text-[16px] focus:border-brand focus:outline-none"
 					/>
 				</div>
 
-				{/*
-				  Meta's WhatsApp policy requires an explicit opt-in before a business may
-				  send order updates. Phase 2's automated messages depend on this checkbox —
-				  do not remove it.
-				*/}
-				<label className="flex items-start gap-2 text-[14px] leading-5 text-ink-soft">
-					<input
-						type="checkbox"
-						name="optin"
-						defaultChecked
-						className="mt-0.5 h-4 w-4 flex-none accent-[#e30513]"
-					/>
-					<span>
-						I agree to receive order updates from {SITE.name} on WhatsApp.
-					</span>
-				</label>
-
 				<button
 					type="submit"
-					className="flex w-full items-center justify-center gap-1.5 bg-[#25D366] py-3 text-[15px] font-semibold text-[#04331a] hover:brightness-95"
+					className="flex w-full items-center justify-center gap-1.5 bg-[#25D366] py-3 text-[16px] font-semibold text-[#04331a] hover:brightness-95"
 				>
 					<WhatsAppIcon className="h-4 w-4" /> Send on WhatsApp
 				</button>
 			</form>
 
 			{sent && (
-				<p className="mt-3 text-center text-[14px] text-[#1a7f37]">
+				<p className="mt-3 text-center text-[15px] text-[#1a7f37]">
 					✅ WhatsApp should have opened. If it didn&apos;t, call us on{" "}
-					<a href={telLink()} className="font-semibold underline">
-						{SITE.phone}
+					<a href={telLinkTo(phone)} className="font-semibold underline">
+						{phone}
 					</a>
 					.
 				</p>
 			)}
 
-			<p className="mt-4 text-center text-[13px] text-muted">
+			<p className="mt-4 text-center text-[14px] text-muted">
 				Prefer to talk?{" "}
-				<a href={telLink()} className="font-semibold text-brand hover:underline">
+				<a href={telLinkTo(phone)} className="font-semibold text-brand hover:underline">
 					Call us instead →
 				</a>
 			</p>
@@ -152,7 +143,7 @@ function Field({
 		<div>
 			<label
 				htmlFor={name}
-				className="mb-1.5 block text-[13px] font-semibold uppercase tracking-wider text-ink-soft"
+				className="mb-1.5 block text-[14px] font-semibold uppercase tracking-wider text-ink-soft"
 			>
 				{label}
 			</label>
@@ -162,7 +153,7 @@ function Field({
 				required={required}
 				placeholder={placeholder}
 				inputMode={inputMode}
-				className="w-full border border-line px-3 py-2.5 text-[15px] focus:border-brand focus:outline-none"
+				className="w-full border border-line px-3 py-2.5 text-[16px] focus:border-brand focus:outline-none"
 			/>
 		</div>
 	);
