@@ -19,8 +19,11 @@ import { publicSite, telLinkTo, waLinkTo } from "@/lib/site";
 import { getSettings } from "@/lib/catalog";
 
 export const metadata: Metadata = {
-	title: "Contact Us",
-	description: "Call or WhatsApp us for your Deepavali cracker order. Sivakasi, Tamil Nadu.",
+	title: "Contact Us — Order Sivakasi Crackers in Chennai",
+	description:
+		"Call or WhatsApp us for your Deepavali 2026 cracker order. Sivakasi crackers at wholesale rates, delivered across Chennai and South India. A real person answers.",
+	keywords: ["contact Sivakasi crackers", "order crackers Chennai", "crackers WhatsApp Chennai"],
+	alternates: { canonical: "/contact" },
 };
 
 export const dynamic = "force-dynamic";

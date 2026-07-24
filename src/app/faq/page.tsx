@@ -3,12 +3,52 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { money, publicSite, type PublicSite } from "@/lib/site";
 import { getSettings } from "@/lib/catalog";
+import JsonLd from "@/components/JsonLd";
+import { faqJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-	title: "FAQ",
+	title: "FAQ — Ordering Sivakasi Crackers in Chennai",
 	description:
-		"How ordering, delivery and payment work. Answers on green crackers, transport, minimum order, bulk orders and the legal rules on firecracker sale in India.",
+		"How ordering, delivery and payment work for Sivakasi crackers in Chennai. Answers on green crackers, transport, minimum order, bulk & temple orders, and the legal rules on firecracker sale in India.",
+	keywords: ["Sivakasi crackers delivery Chennai", "green crackers", "crackers bulk order Chennai"],
+	alternates: { canonical: "/faq" },
 };
+
+/** Plain-text FAQs for FAQPage structured data (rich result on Google/Bing). */
+const FAQ_LD: { q: string; a: string }[] = [
+	{
+		q: "How do I order Sivakasi crackers from Chennai?",
+		a: "Open the price list, set the quantity for what you want, and send your list on WhatsApp. We check stock, add transport, and call you back the same day with the final estimate. Nothing is confirmed until you agree on that call.",
+	},
+	{
+		q: "Can I buy crackers online directly on the website?",
+		a: "No. The Supreme Court's orders prohibit the online sale of firecrackers in India, so this site is a price-list and enquiry tool only. Your order is confirmed by phone and paid for offline by UPI or bank transfer.",
+	},
+	{
+		q: "Is there a minimum order?",
+		a: "Yes. Below the minimum, transport costs more than the crackers, so it isn't worth it for either side. The current minimum is shown on the price list and checkout.",
+	},
+	{
+		q: "Where do you deliver Sivakasi crackers?",
+		a: "To your nearest transport office across Tamil Nadu, Puducherry, Kerala, Karnataka, Andhra Pradesh and Telangana. You collect your parcel from the depot with your ID and the LR number we send you. We do not deliver to Delhi-NCR or any state where sale is banned.",
+	},
+	{
+		q: "Why can't crackers be couriered to my house?",
+		a: "Because fireworks are explosives and are prohibited in the post — DHL, FedEx and courier companies all refuse them. Every genuine Sivakasi seller ships by goods transport to a depot for collection.",
+	},
+	{
+		q: "How do I pay?",
+		a: "After we confirm your order on the phone, we share our UPI ID or bank details. You transfer and send the screenshot. There is no payment gateway on this website, by design. Cash on delivery is not available.",
+	},
+	{
+		q: "Are your crackers green crackers?",
+		a: "The certified ones are labelled and carry a QR code you can scan with the CSIR-NEERI app to verify the formulation. We only call an item green when it is genuinely certified.",
+	},
+	{
+		q: "Do you handle bulk, temple or corporate orders?",
+		a: "Yes. Send your list or budget on WhatsApp and we'll build a package and a sharper rate for the volume. We can raise a GST invoice for company orders.",
+	},
+];
 
 export const dynamic = "force-dynamic";
 
@@ -255,6 +295,13 @@ export default async function FaqPage() {
 	const GROUPS = buildGroups(site);
 	return (
 		<>
+			<JsonLd data={faqJsonLd(FAQ_LD)} />
+			<JsonLd
+				data={breadcrumbJsonLd([
+					{ name: "Home", path: "/" },
+					{ name: "FAQ", path: "/faq" },
+				])}
+			/>
 			<PageHeader
 				title="Frequently Asked Questions"
 				subtitle="Everything about ordering, payment, delivery, green crackers, safety and bulk orders. If your question isn't here, just WhatsApp us — a real person answers."

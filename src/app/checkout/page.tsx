@@ -6,6 +6,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
 	title: "Checkout",
+	robots: { index: false, follow: true },
+	alternates: { canonical: "/checkout" },
 	description:
 		"Confirm your details and complete payment for your cracker order. Payment is manual (UPI / bank) — upload the receipt and we verify it before dispatch.",
 };

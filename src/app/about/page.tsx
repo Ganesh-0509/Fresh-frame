@@ -20,9 +20,11 @@ import {
 type Item = { Icon: ComponentType<{ className?: string }>; title: string; body: string };
 
 export const metadata: Metadata = {
-	title: "About Us",
+	title: "About Us — Sivakasi Crackers Dealer for Chennai",
 	description:
-		"A Sivakasi family in the fireworks trade. We source wholesale, store under licence, and sell direct to families across South India.",
+		"A Sivakasi family in the fireworks trade for over 12 years. We buy wholesale in Sivakasi, store under a licensed magazine, and sell crackers direct to families across Chennai and South India — no middlemen, one honest price.",
+	keywords: ["Sivakasi crackers dealer", "crackers wholesale Chennai", "Standard Fireworks Sivakasi"],
+	alternates: { canonical: "/about" },
 };
 
 export const dynamic = "force-dynamic";

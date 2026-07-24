@@ -78,17 +78,20 @@ export default async function Home() {
 								</span>
 							</div>
 							<p className="text-[14px] font-semibold tracking-[0.3em] text-yellow">
-								✦ DIRECT FROM SIVAKASI ✦
+								✦ DIRECT FROM SIVAKASI TO CHENNAI ✦
 							</p>
 							<h1 className="mt-2 text-5xl font-black leading-none sm:text-7xl">
-								<span className="gold-text underline-spark">FLAT {site.discountPct}%</span>
-								<span className="mt-2 block text-3xl font-extrabold text-white sm:text-4xl">
+								<span className="sr-only">
+									{site.name} — Sivakasi crackers wholesale price list for Chennai, Deepavali 2026.{" "}
+								</span>
+								<span className="gold-text underline-spark" aria-hidden>FLAT {site.discountPct}%</span>
+								<span className="mt-2 block text-3xl font-extrabold text-white sm:text-4xl" aria-hidden>
 									OFF THE PRICE LIST
 								</span>
 							</h1>
 							<p className="mt-3 text-[16px] text-white/80">
-								Real Sivakasi crackers at wholesale rate — plus extra savings the more you
-								buy. Booking open for Deepavali 2026.
+								Real Sivakasi crackers at wholesale rates, direct to Chennai &amp; South India —
+								with extra savings the more you buy. Browse the full Deepavali 2026 price list.
 							</p>
 						</Reveal>
 

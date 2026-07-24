@@ -74,6 +74,12 @@ export const SITE = {
 
   // ---- DOMAIN (registered at Hostinger; DNS to be pointed to the Worker at deploy) ----
   domain: "https://standardfireworkssivakasi.com",
+
+  // ---- SEARCH-ENGINE VERIFICATION (paste tokens after registering; "" = not rendered) ----
+  // Google Search Console → Settings → Ownership → HTML tag → the content="..." value.
+  googleVerification: "",
+  // Bing Webmaster Tools → verify via meta tag → the content="..." value (msvalidate.01).
+  bingVerification: "",
 } as const;
 
 export const money = (n: number) => "₹" + Number(n).toLocaleString("en-IN");
@@ -171,9 +177,9 @@ export const DEFAULT_SETTINGS: Settings = {
   serviceCities: DEFAULT_CITIES,
   gstPct: 0, // off by default — client enables (e.g. 18) in admin if invoicing GST
   requireUtr: true,
-  metaTitle: `${SITE.name} — Crackers Direct from Sivakasi`,
+  metaTitle: `${SITE.name} — Sivakasi Crackers Wholesale Price List, Chennai`,
   metaDescription:
-    "Quality crackers direct from Sivakasi at wholesale rates. Browse the price list and order online with doorstep transport across South India.",
+    "Buy Sivakasi crackers at wholesale rates, direct to Chennai & South India. See the full Deepavali 2026 cracker price list, build your list and send it on WhatsApp for a same-day estimate. Enquiry only — no online payment.",
   logo: "",
   announcement:
     "BOOKING OPEN FOR DEEPAVALI 2026 · BOOK EARLY FOR BEST STOCK · FREE TRANSPORT-OFFICE DELIVERY ACROSS SOUTH INDIA",

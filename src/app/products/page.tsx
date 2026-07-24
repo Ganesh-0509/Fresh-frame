@@ -7,9 +7,17 @@ import { getCatalog, getSettings } from "@/lib/catalog";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-	title: "Price List",
+	title: "Sivakasi Crackers Price List 2026 — Wholesale, Chennai",
 	description:
-		"Full Deepavali 2026 cracker price list. Build your list and send it on WhatsApp for a same-day estimate. Enquiry only — no online sale.",
+		"Full Sivakasi crackers wholesale price list for Deepavali 2026 — sparklers, flower pots, ground chakkar, rockets, sky shots and gift boxes. Build your list and send it on WhatsApp for a same-day estimate in Chennai. Enquiry only — no online payment.",
+	keywords: [
+		"Sivakasi crackers price list",
+		"crackers price list 2026",
+		"crackers wholesale price Chennai",
+		"Diwali crackers price list",
+		"crackers gift box price",
+	],
+	alternates: { canonical: "/products" },
 };
 
 export default async function ProductsPage() {
