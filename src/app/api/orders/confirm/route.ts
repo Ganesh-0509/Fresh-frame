@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb, orders } from "@/lib/db";
 import { sendEmail, ownerEmail, ownerOrderEmail } from "@/lib/email";
+import { isSafeImageDataUrl } from "@/lib/site";
 
 export const runtime = "nodejs";
 
@@ -19,11 +20,15 @@ export async function POST(req: NextRequest) {
 
 	const id = typeof body.id === "string" ? body.id.trim() : "";
 	const utr = typeof body.utr === "string" ? body.utr.trim() : "";
-	const screenshot = typeof body.screenshot === "string" ? body.screenshot : "";
+	const raw = typeof body.screenshot === "string" ? body.screenshot : "";
+	// Anything that isn't inline image data is dropped — this value ends up in an
+	// <a href> in the admin panel, so `javascript:…` here would be stored XSS
+	// against the owner's own session.
+	const screenshot = raw && isSafeImageDataUrl(raw) ? raw : "";
 
 	if (!id) return NextResponse.json({ error: "Missing order id" }, { status: 400 });
 	// Guard against oversized payloads (~1.6MB of base64).
-	if (screenshot.length > 1_600_000) {
+	if (raw.length > 1_600_000) {
 		return NextResponse.json({ error: "Screenshot too large" }, { status: 413 });
 	}
 

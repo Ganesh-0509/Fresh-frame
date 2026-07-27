@@ -9,9 +9,14 @@ import {
 	STATUS_LABEL,
 	type OrderStatus,
 } from "@/lib/db";
-import { money } from "@/lib/site";
+import { money, SITE, isSafeImageDataUrl } from "@/lib/site";
 import { customerMailLink, statusEmail, emailConfigured, sendEmail, ownerEmail } from "@/lib/email";
 import { StatusPill } from "@/components/StatusPill";
+import { getCoupon } from "@/lib/coupons";
+import { couponLabel } from "@/lib/coupon-types";
+import { createCouponAction } from "@/app/admin/coupons/actions";
+import { couponWhatsAppMessage } from "@/app/admin/coupons/message";
+import CopyBox from "@/app/admin/CopyBox";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +28,22 @@ async function notify(orderId: string, status: OrderStatus) {
 	await sendEmail({ to: o.email, subject, text, replyTo: ownerEmail() });
 }
 
-export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetail({
+	params,
+	searchParams,
+}: {
+	params: Promise<{ id: string }>;
+	searchParams: Promise<{ coupon?: string }>;
+}) {
 	await requireAdmin();
 	const { id } = await params;
+	const { coupon: madeCode } = await searchParams;
 	const order = await getOrder(id);
 	if (!order) notFound();
 
 	const items = parseItems(order.itemsJson);
+	// Set when the owner just generated a code from this page.
+	const madeCoupon = madeCode && madeCode !== "novalue" ? await getCoupon(madeCode) : null;
 
 	async function save(formData: FormData) {
 		"use server";
@@ -78,13 +92,29 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 						{order.email && <Row k="Email" v={order.email} />}
 						{order.gstNo && <Row k="GST no." v={order.gstNo} />}
 						<Row k="Address" v={order.address} />
+						{order.area && <Row k="Area" v={order.area} />}
 						<Row k="City / State" v={`${order.city}, ${order.state}`} />
 						<Row k="Pincode" v={order.pincode} />
+						{order.areaMap && (
+							<div className="flex gap-3 py-1 text-[15px]">
+								<span className="w-24 shrink-0 text-muted">Map</span>
+								<a
+									href={order.areaMap}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="font-medium text-brand hover:underline"
+								>
+									📍 Delivery point on Google Maps ↗
+								</a>
+							</div>
+						)}
 					</Card>
 
 					<Card title="Payment">
 						<Row k="UTR / Txn ID" v={order.utr || "—"} />
-						{order.screenshotData ? (
+						{/* Checked again at render: rows stored before the API validated this
+						    could still hold something that isn't an image. */}
+						{order.screenshotData && isSafeImageDataUrl(order.screenshotData) ? (
 							<div className="mt-2">
 								<p className="mb-1 text-[13px] text-muted">Receipt screenshot</p>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -126,6 +156,26 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 											{order.hasPrices ? money(order.total) : "—"}
 										</td>
 									</tr>
+									{order.tierDiscount > 0 && (
+										<tr>
+											<td className="py-1 text-muted" colSpan={2}>
+												Spend offer {order.tierLabel ? `· ${order.tierLabel}` : ""}
+											</td>
+											<td className="py-1 text-right font-semibold text-emerald-700">
+												−{money(order.tierDiscount)}
+											</td>
+										</tr>
+									)}
+									{order.couponCode && (
+										<tr>
+											<td className="py-1 text-muted" colSpan={2}>
+												Discount code {order.couponCode}
+											</td>
+											<td className="py-1 text-right font-semibold text-emerald-700">
+												−{money(order.couponDiscount)}
+											</td>
+										</tr>
+									)}
 									{order.gst > 0 && (
 										<tr>
 											<td className="py-1 text-muted" colSpan={2}>GST</td>
@@ -224,6 +274,72 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 								Save
 							</button>
 						</form>
+					</Card>
+
+					<Card title="Give this customer a coupon">
+						{madeCoupon ? (
+							<>
+								<p className="mb-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[14px] font-semibold text-emerald-800">
+									✓ {madeCoupon.code} — {couponLabel(madeCoupon)}
+								</p>
+								<CopyBox text={couponWhatsAppMessage(madeCoupon, SITE.name)} />
+								<p className="mt-3 text-[13px] text-muted">
+									Send it on WhatsApp. They type it at checkout and the amount comes off.
+								</p>
+							</>
+						) : (
+							<>
+								<p className="mb-3 text-[14px] text-muted">
+									Agreed an extra discount on the phone? Make a code just for{" "}
+									{order.customerName.split(" ")[0] || "this customer"} — only their number
+									can use it, once, within 15 days.
+								</p>
+								<form action={createCouponAction} className="space-y-3">
+									<input type="hidden" name="fromOrder" value={order.id} />
+									<input type="hidden" name="phone" value={order.phone} />
+									<input type="hidden" name="customerName" value={order.customerName} />
+									<input type="hidden" name="maxUses" value="1" />
+									<input type="hidden" name="days" value="15" />
+									<label className="block text-[14px] font-semibold text-ink">
+										Take off
+										<div className="mt-1 flex gap-2">
+											<select
+												name="kind"
+												defaultValue="flat"
+												className="rounded-lg border border-line bg-white px-2 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
+											>
+												<option value="flat">₹</option>
+												<option value="percent">%</option>
+											</select>
+											<input
+												name="value"
+												type="number"
+												min={1}
+												placeholder="2000"
+												className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
+											/>
+										</div>
+									</label>
+									{/* Can't be used on an order smaller than the one being discussed. */}
+									<input type="hidden" name="minOrder" value={Math.max(0, order.total)} />
+									<p className="text-[13px] text-muted">
+										{order.hasPrices && order.total > 0 ? (
+											<>
+												This order is {money(order.total)} before transport. The code will only
+												work on orders of that size or bigger.
+											</>
+										) : (
+											<>
+												This order has no prices yet, so the code will work on any order size.
+											</>
+										)}
+									</p>
+									<button className="w-full rounded-lg bg-brand px-4 py-3 text-[16px] font-bold text-white hover:brightness-110">
+										Make the code
+									</button>
+								</form>
+							</>
+						)}
 					</Card>
 
 					<Card title="Email the customer">
