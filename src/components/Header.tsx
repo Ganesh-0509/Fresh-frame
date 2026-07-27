@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { type PublicSite, telLinkTo, waLinkTo } from "@/lib/site";
+import { type PublicSite, telLinkTo } from "@/lib/site";
 import { PhoneIcon, MailIcon, SparkBurst } from "@/components/icons";
 
 const NAV = [
@@ -27,7 +27,7 @@ export default function Header({ site }: { site: PublicSite }) {
     <>
       <header>
       {/* ---- utility bar ---- */}
-      <div className="bg-brand-deep text-white text-[14px]">
+      <div className="top-bar text-white/90 text-[14px]">
         <div className="mx-auto flex max-w-[1170px] flex-wrap items-center justify-between gap-2 px-4 py-1.5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <a href={telLinkTo(site.phone)} className="inline-flex items-center gap-1.5 hover:text-yellow">
@@ -50,26 +50,33 @@ export default function Header({ site }: { site: PublicSite }) {
       </div>
 
       {/* ---- brand bar ---- */}
-      <div className="bg-brand-dark">
-        <div className="mx-auto flex max-w-[1170px] items-center gap-3 px-4 py-3">
+      <div className="brand-bar">
+        <div className="relative mx-auto flex max-w-[1170px] items-center gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-3">
             {/* Real Standard Fireworks wordmark — floated on a soft gold halo
                 (no white box; the old chip looked cheap). */}
             <span className="logo-halo logo-halo--sm flex-none">
-              <Image
-                src="/brand-logo.png"
-                alt="Standard Fireworks"
-                width={411}
-                height={108}
-                priority
-                className="h-9 w-auto sm:h-10"
-              />
+              {site.logo ? (
+                // Owner-uploaded logo (admin → Photos). Plain <img>: the source is a
+                // D1-backed URL, not a build-time asset, so next/image can't size it.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={site.logo} alt={site.name} className="h-9 w-auto sm:h-10" />
+              ) : (
+                <Image
+                  src="/brand-logo.png"
+                  alt="Standard Fireworks"
+                  width={411}
+                  height={108}
+                  priority
+                  className="h-9 w-auto sm:h-10"
+                />
+              )}
             </span>
             <span className="leading-tight">
               <span className="block text-[14px] font-semibold tracking-[0.25em] text-yellow">
                 SIVAKASI · CHENNAI
               </span>
-              <span className="block text-[12px] tracking-wide text-white/70">
+              <span className="block text-[12px] tracking-wide text-white/85">
                 Wholesale/retail crackers, delivered
               </span>
             </span>
@@ -83,7 +90,7 @@ export default function Header({ site }: { site: PublicSite }) {
           h-11 (44px) is fixed on purpose at every breakpoint: the sticky totals
           bar on /products offsets against it, and a nav that changes height
           between desktop and mobile silently buries that bar. */}
-      <nav className="sticky top-0 z-50 bg-nav shadow-sm">
+      <nav className="nav-bar sticky top-0 z-50 shadow-sm">
         <div className="mx-auto flex h-11 max-w-[1170px] items-center justify-between px-4">
           {/* left: links (desktop) / hamburger (mobile) */}
           <ul className="hidden h-full md:flex">
@@ -95,8 +102,8 @@ export default function Header({ site }: { site: PublicSite }) {
                     href={n.href}
                     className={`flex h-full items-center px-4 text-[16px] font-medium transition-colors ${
                       active
-                        ? "bg-brand text-white"
-                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                        ? "bg-white/[0.06] text-gold shadow-[inset_0_-3px_0_var(--color-yellow)]"
+                        : "text-white/80 hover:bg-white/10 hover:text-gold"
                     }`}
                   >
                     {n.label}
@@ -118,30 +125,33 @@ export default function Header({ site }: { site: PublicSite }) {
           <div className="flex items-center gap-2">
             <Link
               href="/products"
-              className="hidden rounded-md border border-white/40 px-3 py-1.5 text-[14px] font-semibold text-white transition-colors hover:bg-white/10 sm:inline-flex"
+              className="hidden rounded-md border border-yellow/70 px-3 py-1.5 text-[14px] font-semibold text-gold transition-colors hover:bg-yellow/15 sm:inline-flex"
             >
               Price List
             </Link>
-            <a
-              href={waLinkTo(site.whatsapp, `Hi ${site.name}, I'd like to place an order.`)}
-              target="_blank"
-              rel="noopener"
-              className="btn-yellow shimmer px-3! py-1.5! text-[13.5px]!"
-            >
+            {/*
+              "Order Now" goes to the PRICE LIST, not WhatsApp. Ordering happens on the
+              site (pick quantities → checkout); firing the customer into WhatsApp here
+              dropped them out of the funnel before they had seen a single price.
+              The WhatsApp deep-links elsewhere are for general ENQUIRIES — leave those.
+            */}
+            <Link href="/products" className="btn-yellow shimmer px-3! py-1.5! text-[13.5px]!">
               <SparkBurst className="h-3.5 w-3.5" /> Order Now
-            </a>
+            </Link>
           </div>
         </div>
 
         {open && (
-          <ul className="absolute inset-x-0 top-11 border-t border-white/10 bg-nav shadow-lg md:hidden">
+          <ul className="nav-bar absolute inset-x-0 top-11 border-t border-yellow/25 shadow-lg md:hidden">
             {NAV.map((n) => (
               <li key={n.href}>
                 <Link
                   href={n.href}
                   onClick={() => setOpen(false)}
                   className={`block border-b border-white/5 px-4 py-3 text-sm ${
-                    pathname === n.href ? "bg-brand text-white" : "text-white/85"
+                    pathname === n.href
+                      ? "bg-white/[0.06] font-semibold text-gold shadow-[inset_3px_0_0_var(--color-yellow)]"
+                      : "text-white/85"
                   }`}
                 >
                   {n.label}

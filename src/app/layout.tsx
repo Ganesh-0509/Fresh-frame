@@ -7,7 +7,7 @@ import PublicOnly from "@/components/PublicOnly";
 import WelcomePopup from "@/components/WelcomePopup";
 import { CartProvider } from "@/lib/cart";
 import { SITE, publicSite } from "@/lib/site";
-import { getSettings } from "@/lib/catalog";
+import { getSettings, getLogoUrl } from "@/lib/catalog";
 import JsonLd from "@/components/JsonLd";
 import { SEO_KEYWORDS, localBusinessJsonLd, websiteJsonLd } from "@/lib/seo";
 
@@ -46,11 +46,16 @@ export async function generateMetadata(): Promise<Metadata> {
 			description: s.metaDescription,
 			images: ["/brand-logo.png"],
 		},
-		robots: {
-			index: true,
-			follow: true,
-			googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
-		},
+		// Belt-and-braces with robots.txt: while prices are placeholders the site
+		// stays out of the index at the page level too. robots.txt stops crawling;
+		// this stops indexing of anything already discovered via an inbound link.
+		robots: SITE.pricesAreProvisional
+			? { index: false, follow: false, googleBot: { index: false, follow: false } }
+			: {
+					index: true,
+					follow: true,
+					googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+				},
 		verification: {
 			google: SITE.googleVerification || undefined,
 			other: SITE.bingVerification ? { "msvalidate.01": SITE.bingVerification } : {},
@@ -64,7 +69,8 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const site = publicSite(await getSettings());
+	const [settings, logoUrl] = await Promise.all([getSettings(), getLogoUrl()]);
+	const site = publicSite(settings, logoUrl);
 	return (
 		<html lang="en" className={rubik.variable}>
 			<head>

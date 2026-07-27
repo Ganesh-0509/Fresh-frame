@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/PageHeader";
 import EstimateBuilder from "@/components/EstimateBuilder";
+import ProvisionalPriceNotice from "@/components/ProvisionalPriceNotice";
 import { money } from "@/lib/site";
 import { getCatalog, getSettings } from "@/lib/catalog";
 
@@ -25,6 +26,7 @@ export default async function ProductsPage() {
 
 	return (
 		<>
+			<ProvisionalPriceNotice />
 			<PageHeader
 				title="Price List"
 				subtitle={`Set a quantity — your total updates live. Minimum order ${money(settings.minOrder)}.`}

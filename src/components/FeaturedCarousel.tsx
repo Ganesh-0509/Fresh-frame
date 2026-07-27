@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CategoryIcon, ChevronIcon, SparkBurst } from "@/components/icons";
-import { waLinkTo } from "@/lib/site";
 
-type Item = { id: string; name: string };
+/** `image` = owner-uploaded category photo URL, "" → the drawn icon is used. */
+type Item = { id: string; name: string; image: string };
 
 /**
  * One-item-at-a-time featured carousel. Auto-advances every 4.5s, pauses on
@@ -16,13 +16,9 @@ type Item = { id: string; name: string };
 export default function FeaturedCarousel({
 	items,
 	discountPct,
-	whatsapp,
-	brand,
 }: {
 	items: Item[];
 	discountPct: number;
-	whatsapp: string;
-	brand: string;
 }) {
 	const n = items.length;
 	const [i, setI] = useState(0);
@@ -70,8 +66,19 @@ export default function FeaturedCarousel({
 							aria-label={`${k + 1} of ${n}: ${c.name}`}
 						>
 							<div className="grid grid-cols-1 sm:grid-cols-[1fr_1.15fr]">
-								<div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-[#fff7e6] to-[#fdeccb] sm:aspect-auto">
-									<CategoryIcon id={c.id} className="h-28 w-28 text-brand" />
+								<div className="flex aspect-[16/10] items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff7e6] to-[#fdeccb] sm:aspect-auto">
+									{c.image ? (
+										// The owner's own category photo (admin → Products → Manage categories).
+										// eslint-disable-next-line @next/next/no-img-element
+										<img
+											src={c.image}
+											alt={c.name}
+											loading={k === 0 ? "eager" : "lazy"}
+											className="h-full w-full object-cover"
+										/>
+									) : (
+										<CategoryIcon id={c.id} className="h-28 w-28 text-brand" />
+									)}
 								</div>
 								<div className="flex flex-col justify-center gap-3 p-7 sm:p-9">
 									<p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-brand">
@@ -82,21 +89,16 @@ export default function FeaturedCarousel({
 										Real Sivakasi {c.name.toLowerCase()} at wholesale rates — flat{" "}
 										{discountPct}% off the printed list price.
 									</p>
+									{/*
+										"Order Now" goes to this category on the PRICE LIST, not WhatsApp —
+										the customer should see rates and build a list before talking to anyone.
+										This used to sit beside a "View prices →" button; once both point at the
+										same place one of them is just noise, so the weaker one is gone.
+									*/}
 									<div className="mt-1 flex flex-wrap items-center gap-3">
-										<Link href={`/products#${c.id}`} className="btn-red">
-											View prices →
-										</Link>
-										<a
-											href={waLinkTo(
-												whatsapp,
-												`Hi ${brand}, I'd like to order ${c.name}. Please share the rate.`,
-											)}
-											target="_blank"
-											rel="noopener"
-											className="btn-yellow shimmer"
-										>
+										<Link href={`/products#${c.id}`} className="btn-yellow shimmer">
 											<SparkBurst className="h-4 w-4" /> Order Now
-										</a>
+										</Link>
 									</div>
 								</div>
 							</div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CheckoutFlow from "@/components/CheckoutFlow";
+import ProvisionalPriceNotice from "@/components/ProvisionalPriceNotice";
 import { getCatalog, getSettings } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function CheckoutPage() {
 	const [catalog, settings] = await Promise.all([getCatalog(), getSettings()]);
 	return (
 		<>
+			<ProvisionalPriceNotice />
 			<section className="border-b border-line bg-shell py-8">
 				<div className="mx-auto max-w-[860px] px-4">
 					<h1 className="text-2xl font-bold text-ink sm:text-3xl">Checkout</h1>
