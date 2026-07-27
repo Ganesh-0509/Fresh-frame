@@ -47,7 +47,7 @@ export default async function OrdersPage() {
 										<span className="block text-[12.5px] text-muted">{o.phone}</span>
 									</td>
 									<td className="px-3 py-3 text-ink-soft">
-										{o.city}, {o.state}
+										{o.area ? `${o.area}, ` : ""}{o.city}, {o.state}
 										<span className="block text-[12.5px] text-muted">{o.pincode}</span>
 									</td>
 									<td className="px-3 py-3 text-ink">{o.itemCount}</td>

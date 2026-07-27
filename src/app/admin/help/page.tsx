@@ -19,7 +19,7 @@ export default async function AdminHelp() {
 				</p>
 			</div>
 
-			<Card title="🧭 The four tabs — what each one does">
+			<Card title="🧭 The tabs — what each one does">
 				<Row k="Dashboard" v="A quick summary — new orders waiting, recent activity." />
 				<Row
 					k="Orders"
@@ -30,9 +30,46 @@ export default async function AdminHelp() {
 					v="Your full price list. Add, rename, hide, or delete items and — most importantly — set the real prices."
 				/>
 				<Row
+					k="Codes"
+					v="Discount codes you give a customer while bargaining on the phone. Easiest way: open their order and press 'Give this customer a coupon' — it makes the code, locks it to their phone number, and writes the WhatsApp message for you. They type it at checkout and the money comes off by itself."
+				/>
+				<Row
+					k="Photos"
+					v="Your own pictures: the shop logo, shop/godown photos for the About page, and wide banners for the home page."
+				/>
+				<Row
 					k="Settings"
 					v="All the text, numbers, contact details, discounts, delivery areas and payment details shown across the website."
 				/>
+			</Card>
+
+			<Card title="📷 Adding your own photos">
+				<p>
+					Anywhere you see a dotted box with <b>+ Add photo</b>, click it and pick a picture
+					from your phone or computer. It saves and appears on the website by itself —
+					there is nothing else to press.
+				</p>
+				<Row
+					k="Product photos"
+					v="Products tab — the box on the left of each item. A product with no photo shows its category picture instead."
+				/>
+				<Row
+					k="Category photos"
+					v="Products tab → Manage categories. Used on the home page and at the top of that category in the price list."
+				/>
+				<Row
+					k="Logo, shop photos, banners"
+					v="Photos tab."
+				/>
+				<Row
+					k="UPI QR code"
+					v="Settings tab → Payment."
+				/>
+				<p className="text-muted">
+					Big photos are fine — a picture straight from your phone gets shrunk automatically
+					before it is saved. Please use <b>your own</b> photos: pictures taken from other
+					shops&apos; or brands&apos; websites belong to them.
+				</p>
 			</Card>
 
 			<Card title="💰 Changing prices (do this first)">
@@ -58,12 +95,13 @@ export default async function AdminHelp() {
 				<Row k="Minimum order" v="The smallest order you'll accept (shown everywhere)." />
 				<Row k="Contact" v="Phone, WhatsApp number, email — updates the header, footer and contact page at once." />
 				<Row k="Payment" v="UPI ID, upload a UPI QR image, and bank account details for the footer." />
-				<Row k="Delivery" v="Which states you serve, the transport fee per state, and which cities within each state — customers can only order to cities you list." />
+				<Row k="Delivery" v="Three levels: the states you serve (with a transport fee each) → the cities in each state → the areas inside each city, with a Google Maps link for every area. Customers can only order to a place you list, and they see the map pin of the area they pick." />
+				<Row k="Your password" v="Change the password you use to log in here. Do this once so only you know it. If you ever forget it, use 'Forgotten your password?' on the login screen — or call your developer, who can always let you back in." />
 				<Row k="GST" v="Set a GST % to add it at checkout, and your GSTIN to show it in the footer." />
 				<Row k="Business identity" v="Tagline, opening hours, address, firm name, explosives licence no." />
 				<Row k="Social links" v="Instagram / Facebook / YouTube — leave blank to hide." />
 				<Row k="About-page story" v="Your shop's story text — write it in your own words." />
-				<Row k="Logo & SEO" v="Upload a logo, and set the title/description that shows up on Google." />
+				<Row k="SEO" v="The title and description that show up on Google. (The logo moved to the Photos tab.)" />
 			</Card>
 
 			<Card title="📧 Email notifications">

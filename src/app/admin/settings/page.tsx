@@ -1,8 +1,11 @@
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, hasOwnPassword, MIN_PASSWORD_LENGTH } from "@/lib/admin-auth";
+import { changePasswordAction } from "./password-actions";
 import { getSettings } from "@/lib/catalog";
 import { emailConfigured, ownerEmail } from "@/lib/email";
+import { areaKey } from "@/lib/site";
 import { saveSettingsAction, sendTestEmailAction } from "./actions";
 import ImageInput from "./ImageInput";
+import AreaRows from "./AreaRows";
 import { aCard, aCardTitle, aCardSub, aLabel, aHint, aInput, aBtn, aBtnGhost, aPageTitle, aSuccess } from "@/lib/admin-ui";
 
 export const dynamic = "force-dynamic";
@@ -10,13 +13,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettings({
 	searchParams,
 }: {
-	searchParams: Promise<{ saved?: string; test?: string }>;
+	searchParams: Promise<{ saved?: string; test?: string; pw?: string }>;
 }) {
 	await requireAdmin();
 	const s = await getSettings();
 	const mail = emailConfigured();
 	const inbox = ownerEmail();
-	const { saved, test } = await searchParams;
+	const { saved, test, pw } = await searchParams;
+	const ownPassword = await hasOwnPassword();
 
 	return (
 		<div>
@@ -27,6 +31,53 @@ export default async function AdminSettings({
 			</p>
 
 			{saved && <p className={aSuccess}>✓ Saved! Your website is updated.</p>}
+
+			{/* ---- Password (own form — nothing to do with Save changes below) ---- */}
+			<div id="password" className={`mb-6 ${aCard}`}>
+				<h2 className={aCardTitle}>🔒 Your password</h2>
+				<p className={aCardSub}>
+					The password you type to get into this admin panel. Change it any time.
+				</p>
+
+				{pw === "ok" && <p className={aSuccess}>✓ Password changed. Use the new one from now on.</p>}
+				{pw && pw !== "ok" && (
+					<p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[14.5px] font-medium text-red-700">
+						{pw === "wrong_current" && "That current password isn't right. Try again."}
+						{pw === "too_short" && `Your new password needs at least ${MIN_PASSWORD_LENGTH} letters or numbers.`}
+						{pw === "mismatch" && "The two new passwords don't match."}
+						{pw === "same_as_current" && "That's the same as your current password — pick a different one."}
+					</p>
+				)}
+
+				{!ownPassword && (
+					<p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-[14.5px] text-amber-800">
+						You&apos;re still using the password your developer set up. Change it to something
+						only you know.
+					</p>
+				)}
+
+				<form action={changePasswordAction} className="grid gap-4 sm:grid-cols-2">
+					<label className="block sm:col-span-2">
+						<span className={aLabel}>Current password</span>
+						<input type="password" name="currentPassword" autoComplete="current-password" className={aInput} />
+					</label>
+					<label className="block">
+						<span className={aLabel}>New password</span>
+						<input type="password" name="newPassword" autoComplete="new-password" className={aInput} />
+						<span className={aHint}>At least {MIN_PASSWORD_LENGTH} letters or numbers.</span>
+					</label>
+					<label className="block">
+						<span className={aLabel}>Type the new password again</span>
+						<input type="password" name="confirmPassword" autoComplete="new-password" className={aInput} />
+					</label>
+					<div className="sm:col-span-2">
+						<button className={aBtn}>Change my password</button>
+						<p className={aHint}>
+							Changing it signs you out on every other phone and computer — that&apos;s on purpose.
+						</p>
+					</div>
+				</form>
+			</div>
 
 			{/* ---- Automatic emails (Resend) ---- */}
 			<div className={`mb-6 ${aCard}`}>
@@ -111,11 +162,16 @@ export default async function AdminSettings({
 					</div>
 				</Card>
 
-				<Card icon="🚚" title="Delivery charge & cities" sub="Set what you charge for transport, and which cities you serve, per state.">
+				<Card icon="🚚" title="Delivery charge, cities & areas" sub="State → city → area. Set what you charge, where you deliver, and the map pin for each area.">
 					<div className="space-y-3 sm:col-span-2">
 						<p className="text-[14px] text-muted">
 							The delivery charge is added automatically at checkout. Customers can only pick
-							a city you list here — so they can&apos;t order to a place you don&apos;t serve.
+							a city — and an area inside it — that you list here, so they can&apos;t order to a
+							place you don&apos;t serve.
+						</p>
+						<p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] text-amber-800">
+							New city? Type it in the city box, press <b>Save changes</b>, then come back — its
+							area boxes will appear underneath.
 						</p>
 						{s.serviceStates.map((st) => (
 							<div key={st} className="rounded-xl border border-line bg-row p-3.5">
@@ -141,6 +197,39 @@ export default async function AdminSettings({
 										className={aInput}
 									/>
 								</label>
+
+								{/* Level 3 — areas inside each city, each with its own Google Maps pin. */}
+								<div className="mt-3 space-y-2">
+									{(s.serviceCities[st] ?? []).map((city) => {
+										const areas = s.serviceAreas[areaKey(st, city)] ?? [];
+										return (
+											<details key={city} className="rounded-lg border border-line bg-white px-3 py-2">
+												<summary className="cursor-pointer list-none text-[14.5px] font-semibold text-ink">
+													📍 {city}
+													<span className="ml-2 text-[13px] font-normal text-muted">
+														{areas.length
+															? `${areas.length} area${areas.length > 1 ? "s" : ""} — click to edit`
+															: "no areas yet — click to add"}
+													</span>
+												</summary>
+												<p className={aHint}>
+													Areas inside {city} the customer picks from. Paste the Google Maps
+													link of each delivery point — the customer sees it at checkout and
+													gets it by email. Press <b>+ Add another area</b> for as many as you
+													need; <b>✕</b> removes one.
+												</p>
+												<AreaRows base={`area::${areaKey(st, city)}`} areas={areas} />
+												<p className="mt-2 text-[13px] text-muted">
+													To get a link: open Google Maps → search the spot → <b>Share</b> →{" "}
+													<b>Copy link</b> → paste it here.
+												</p>
+											</details>
+										);
+									})}
+									{(s.serviceCities[st] ?? []).length === 0 && (
+										<p className="text-[13.5px] text-muted">Add a city above and press Save to set its areas.</p>
+									)}
+								</div>
 							</div>
 						))}
 					</div>
@@ -218,9 +307,13 @@ export default async function AdminSettings({
 					</div>
 				</Card>
 
-				<Card icon="🖼️" title="Shop logo" sub="Shown in the top corner of your website.">
+				<Card icon="🖼️" title="Shop logo & pictures" sub="Your logo, shop photos and home-page banners now live in their own tab.">
 					<div className="sm:col-span-2">
-						<ImageInput name="logo" label="Logo image" defaultValue={s.logo} />
+						<a href="/admin/photos" className={aBtnGhost}>
+							Go to the Photos tab →
+						</a>
+						{/* Keeps a logo saved the old way (inside settings) from being wiped on Save. */}
+						<input type="hidden" name="logo" value={s.logo} />
 					</div>
 				</Card>
 

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSettings, saveSettings } from "@/lib/catalog";
 import { emailConfigured, ownerEmail, sendEmail } from "@/lib/email";
-import { SITE } from "@/lib/site";
+import { SITE, areaKey, cleanMapUrl, type ServiceArea } from "@/lib/site";
 
 /** Owner clicks "Send test email" — proves the email integration works. */
 export async function sendTestEmailAction() {
@@ -53,6 +53,41 @@ export async function saveSettingsAction(formData: FormData) {
 			.filter(Boolean);
 	}
 
+	// Level 3 — areas inside each city, from `area::<state>::<city>::<i>::name|map`.
+	// The owner can add unlimited rows in the browser, so the slot numbers are
+	// discovered from what was actually submitted rather than assumed. A row with
+	// a blank name is dropped, which is also how the owner deletes an area. A city
+	// that isn't in the submitted list any more (renamed/removed) loses its areas.
+	const serviceAreas: Record<string, ServiceArea[]> = {};
+	for (const st of serviceStates) {
+		for (const city of serviceCities[st]) {
+			const key = areaKey(st, city);
+			const prev = cur.serviceAreas?.[key] ?? [];
+			const prefix = `area::${key}::`;
+			const suffix = "::name";
+			const slots: number[] = [];
+			for (const field of formData.keys()) {
+				if (!field.startsWith(prefix) || !field.endsWith(suffix)) continue;
+				const i = Number(field.slice(prefix.length, field.length - suffix.length));
+				if (Number.isInteger(i) && i >= 0) slots.push(i);
+			}
+			slots.sort((a, b) => a - b);
+
+			const rows: ServiceArea[] = [];
+			for (const i of slots) {
+				const name = s(`${prefix}${i}${suffix}`, "");
+				// Skip blanks and repeats — two areas with the same name would give the
+				// customer a dropdown with two identical options.
+				if (!name || rows.some((r) => r.name.toLowerCase() === name.toLowerCase())) continue;
+				rows.push({ name, mapUrl: cleanMapUrl(s(`${prefix}${i}::map`, "")) });
+			}
+			// A city rendered before this feature existed has no area fields at all —
+			// keep whatever was saved rather than silently wiping it.
+			if (rows.length) serviceAreas[key] = rows;
+			else if (!slots.length && prev.length) serviceAreas[key] = prev;
+		}
+	}
+
 	// Discount tiers — up to 4 rows (tierMin::i / tierExtra::i / tierLabel::i).
 	// A row counts only if it has a positive spend threshold.
 	const discountTiers = [];
@@ -81,6 +116,7 @@ export async function saveSettingsAction(formData: FormData) {
 		serviceStates,
 		transportFees,
 		serviceCities,
+		serviceAreas,
 		gstPct: n("gstPct", cur.gstPct),
 		requireUtr: formData.get("requireUtr") === "on",
 		metaTitle: s("metaTitle", cur.metaTitle),
