@@ -2,23 +2,36 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Modal from "@/components/Modal";
 import Fireworks from "@/components/Fireworks";
 import { SparkBurst, WhatsAppIcon } from "@/components/icons";
 import { type PublicSite, money, waLinkTo } from "@/lib/site";
 
 /**
- * Festive discount popup. Shows on EVERY page load, a short beat after load so
- * it doesn't fight the hero. Uses the same night-sky + fireworks animation as
- * the rest of the site.
+ * Festive discount popup, shown a short beat after load so it doesn't fight the hero.
+ *
+ * It lives in the root layout, so without this allowlist it fired on EVERY page —
+ * including two places it actively hurts:
+ *   • /checkout — a 50%-off popup thrown over a customer mid-way through typing
+ *     their delivery address is a good way to lose the order.
+ *   • the error and 404 pages — the popup covered the message telling the customer
+ *     what had gone wrong and how to phone us.
+ * Matching a known marketing route (rather than excluding a blocklist) handles both,
+ * because a 404 or a crashed route never matches anything here.
  */
+const POPUP_ROUTES = ["/", "/about", "/faq", "/contact"];
+
 export default function WelcomePopup({ site }: { site: PublicSite }) {
 	const [open, setOpen] = useState(false);
+	const pathname = usePathname();
+	const allowed = POPUP_ROUTES.includes(pathname);
 
 	useEffect(() => {
+		if (!allowed) return;
 		const t = setTimeout(() => setOpen(true), 1400);
 		return () => clearTimeout(t);
-	}, []);
+	}, [allowed]);
 
 	const close = () => setOpen(false);
 
