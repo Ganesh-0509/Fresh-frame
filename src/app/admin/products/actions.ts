@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
 	updateProduct,
+	setProductImage,
+	setCategoryImage,
 	deleteProduct,
 	createProduct,
 	createCategory,
@@ -31,6 +33,14 @@ export async function saveProductAction(formData: FormData) {
 		active: formData.get("active") === "on",
 		stock: stockRaw === null || stockRaw === "" ? -1 : Math.floor(Number(stockRaw)),
 	});
+	// Only touch the photo when the row actually changed it — a price edit shouldn't
+	// re-post (or wipe) the image.
+	if (formData.get("imageChanged") === "1") {
+		const image = String(formData.get("image") || "");
+		if (image === "" || /^data:image\/(jpeg|png|webp);base64,/.test(image)) {
+			await setProductImage(id, image);
+		}
+	}
 	refresh();
 }
 
@@ -72,6 +82,18 @@ export async function renameCategoryAction(formData: FormData) {
 	const name = String(formData.get("name") || "").trim();
 	if (id && name) await renameCategory(id, name);
 	refresh();
+}
+
+export async function saveCategoryImageAction(formData: FormData) {
+	await requireAdmin();
+	const id = String(formData.get("id") || "");
+	if (!id || formData.get("imageChanged") !== "1") return;
+	const image = String(formData.get("image") || "");
+	if (image === "" || /^data:image\/(jpeg|png|webp);base64,/.test(image)) {
+		await setCategoryImage(id, image);
+		refresh();
+		revalidatePath("/");
+	}
 }
 
 export async function deleteCategoryAction(formData: FormData) {

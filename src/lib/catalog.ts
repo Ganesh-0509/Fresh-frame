@@ -16,6 +16,11 @@ import {
 	type CatCategory,
 	type CatProduct,
 	type LineId,
+	type SiteImage,
+	type SiteImageGroup,
+	productImageUrl,
+	categoryImageUrl,
+	siteImageUrl,
 } from "@/lib/catalog-types";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/site";
 
@@ -23,6 +28,19 @@ export const categories = sqliteTable("categories", {
 	id: text("id").primaryKey(),
 	line: text("line").notNull(),
 	name: text("name").notNull(),
+	sort: integer("sort").notNull().default(0),
+	// Same rules as products.image — never selected in bulk; served by /api/category-image.
+	image: text("image").notNull().default(""),
+	imageV: integer("image_v").notNull().default(0),
+});
+
+/** Logo / About / banner pictures. See catalog-types SITE_IMAGE_GROUPS. */
+export const siteImages = sqliteTable("site_images", {
+	id: text("id").primaryKey(),
+	group: text("group_key").notNull(),
+	data: text("data").notNull(),
+	v: integer("v").notNull().default(1),
+	caption: text("caption").notNull().default(""),
 	sort: integer("sort").notNull().default(0),
 });
 
@@ -37,6 +55,11 @@ export const products = sqliteTable("products", {
 	active: integer("active").notNull().default(1),
 	stock: integer("stock").notNull().default(-1),
 	sort: integer("sort").notNull().default(0),
+	// Owner-uploaded photo as a data URL. NEVER selected by getCatalog — 182 products
+	// worth of base64 would bloat every page. It is served by /api/product-image/<id>.
+	image: text("image").notNull().default(""),
+	// 0 = no photo. >0 = photo present; doubles as the cache-buster in the image URL.
+	imageV: integer("image_v").notNull().default(0),
 });
 
 export const settingsTable = sqliteTable("settings", {
@@ -47,7 +70,7 @@ export const settingsTable = sqliteTable("settings", {
 function db() {
 	const { env } = getCloudflareContext();
 	if (!env.DB) throw new Error("D1 binding 'DB' is not configured.");
-	return drizzle(env.DB, { schema: { categories, products, settingsTable } });
+	return drizzle(env.DB, { schema: { categories, products, settingsTable, siteImages } });
 }
 
 /* ---- DEMO PRICES (production: OFF) ----
@@ -101,6 +124,7 @@ function seedCatalog(): Catalog {
 		id: c.id,
 		line: c.line,
 		name: c.name,
+		image: "",
 	}));
 	const catLine = new Map(cats.map((c) => [c.id, c.line]));
 	const prods: CatProduct[] = SEED_PRODUCTS.map((p) => ({
@@ -113,6 +137,7 @@ function seedCatalog(): Catalog {
 		price: p.price,
 		active: true,
 		stock: -1,
+		image: "",
 	}));
 	return { categories: cats, products: applyDemoPrices(prods) };
 }
@@ -147,10 +172,39 @@ export async function getCatalog(): Promise<Catalog> {
 	try {
 		const d = db();
 		await ensureSeeded(d);
-		const cats = await d.select().from(categories).orderBy(asc(categories.sort));
-		const prods = await d.select().from(products).orderBy(asc(products.sort));
+		const cats = await d
+			.select({
+				id: categories.id,
+				line: categories.line,
+				name: categories.name,
+				imageV: categories.imageV,
+			})
+			.from(categories)
+			.orderBy(asc(categories.sort));
+		// Explicit column list — `image` (a base64 data URL) is deliberately excluded so
+		// product photos never travel inside the page payload. See productImageUrl().
+		const prods = await d
+			.select({
+				id: products.id,
+				categoryId: products.categoryId,
+				line: products.line,
+				name: products.name,
+				content: products.content,
+				mrp: products.mrp,
+				price: products.price,
+				active: products.active,
+				stock: products.stock,
+				imageV: products.imageV,
+			})
+			.from(products)
+			.orderBy(asc(products.sort));
 		return {
-			categories: cats.map((c) => ({ id: c.id, line: c.line as LineId, name: c.name })),
+			categories: cats.map((c) => ({
+				id: c.id,
+				line: c.line as LineId,
+				name: c.name,
+				image: categoryImageUrl(c.id, c.imageV),
+			})),
 			products: applyDemoPrices(
 				prods.map((p) => ({
 					id: p.id,
@@ -162,6 +216,7 @@ export async function getCatalog(): Promise<Catalog> {
 					price: p.price,
 					active: p.active === 1,
 					stock: p.stock,
+					image: productImageUrl(p.id, p.imageV),
 				})),
 			),
 		};
@@ -219,6 +274,44 @@ export async function deleteProduct(id: string): Promise<void> {
 	await db().delete(products).where(eq(products.id, id));
 }
 
+/* ---- product photos ----
+ * Stored as compressed data URLs in D1 (same approach as the logo/QR). They are read
+ * one at a time by the image route, never in bulk, so they cost nothing on page loads.
+ */
+
+/** Raw stored data URL for a product photo, or null if there is none. */
+export async function getProductImage(id: string): Promise<string | null> {
+	try {
+		const rows = await db()
+			.select({ image: products.image })
+			.from(products)
+			.where(eq(products.id, id))
+			.limit(1);
+		return rows[0]?.image ? rows[0].image : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Save (or clear, with "") a product photo. Bumps image_v so the public URL changes
+ * and browsers/CDN pick the new photo up immediately; clearing resets it to 0.
+ */
+export async function setProductImage(id: string, dataUrl: string): Promise<void> {
+	const d = db();
+	if (!dataUrl) {
+		await d.update(products).set({ image: "", imageV: 0 }).where(eq(products.id, id));
+		return;
+	}
+	const rows = await d
+		.select({ imageV: products.imageV })
+		.from(products)
+		.where(eq(products.id, id))
+		.limit(1);
+	const next = (rows[0]?.imageV ?? 0) + 1;
+	await d.update(products).set({ image: dataUrl, imageV: next }).where(eq(products.id, id));
+}
+
 /* ---- category writes (admin) ---- */
 
 export async function createCategory(line: LineId, name: string): Promise<void> {
@@ -238,6 +331,146 @@ export async function deleteCategory(id: string): Promise<boolean> {
 	if (inCat.length) return false;
 	await d.delete(categories).where(eq(categories.id, id));
 	return true;
+}
+
+/* ---- category photos ---- */
+
+export async function getCategoryImage(id: string): Promise<string | null> {
+	try {
+		const rows = await db()
+			.select({ image: categories.image })
+			.from(categories)
+			.where(eq(categories.id, id))
+			.limit(1);
+		return rows[0]?.image ? rows[0].image : null;
+	} catch {
+		return null;
+	}
+}
+
+/** Save (or clear, with "") a category photo. Mirrors setProductImage. */
+export async function setCategoryImage(id: string, dataUrl: string): Promise<void> {
+	const d = db();
+	if (!dataUrl) {
+		await d.update(categories).set({ image: "", imageV: 0 }).where(eq(categories.id, id));
+		return;
+	}
+	const rows = await d
+		.select({ imageV: categories.imageV })
+		.from(categories)
+		.where(eq(categories.id, id))
+		.limit(1);
+	const next = (rows[0]?.imageV ?? 0) + 1;
+	await d.update(categories).set({ image: dataUrl, imageV: next }).where(eq(categories.id, id));
+}
+
+/* ---- site images (logo / About photos / home banners) ---- */
+
+/** Listing for a group — URLs and captions only, never the image data. */
+export async function listSiteImages(group: SiteImageGroup): Promise<SiteImage[]> {
+	try {
+		const rows = await db()
+			.select({
+				id: siteImages.id,
+				group: siteImages.group,
+				v: siteImages.v,
+				caption: siteImages.caption,
+				sort: siteImages.sort,
+			})
+			.from(siteImages)
+			.where(eq(siteImages.group, group))
+			.orderBy(asc(siteImages.sort));
+		return rows.map((r) => ({
+			id: r.id,
+			group: r.group as SiteImageGroup,
+			url: siteImageUrl(r.id, r.v),
+			caption: r.caption,
+			sort: r.sort,
+		}));
+	} catch {
+		return [];
+	}
+}
+
+export async function getSiteImageData(id: string): Promise<string | null> {
+	try {
+		const rows = await db()
+			.select({ data: siteImages.data })
+			.from(siteImages)
+			.where(eq(siteImages.id, id))
+			.limit(1);
+		return rows[0]?.data ? rows[0].data : null;
+	} catch {
+		return null;
+	}
+}
+
+export async function addSiteImage(
+	group: SiteImageGroup,
+	dataUrl: string,
+	caption = "",
+): Promise<void> {
+	const d = db();
+	const existing = await d
+		.select({ sort: siteImages.sort })
+		.from(siteImages)
+		.where(eq(siteImages.group, group));
+	const sort = existing.reduce((max, r) => Math.max(max, r.sort), 0) + 1;
+	await d.insert(siteImages).values({
+		id: `${group}-${crypto.randomUUID().slice(0, 8)}`,
+		group,
+		data: dataUrl,
+		v: 1,
+		caption,
+		sort,
+	});
+}
+
+/** For single-image groups (the logo): replace whatever is there. */
+export async function setSingleSiteImage(
+	group: SiteImageGroup,
+	dataUrl: string,
+): Promise<void> {
+	const d = db();
+	await d.delete(siteImages).where(eq(siteImages.group, group));
+	if (dataUrl) await addSiteImage(group, dataUrl);
+}
+
+export async function updateSiteImageCaption(id: string, caption: string): Promise<void> {
+	await db().update(siteImages).set({ caption }).where(eq(siteImages.id, id));
+}
+
+export async function deleteSiteImage(id: string): Promise<void> {
+	await db().delete(siteImages).where(eq(siteImages.id, id));
+}
+
+/** Move a picture one place earlier/later in its group by swapping sort values. */
+export async function moveSiteImage(id: string, dir: "up" | "down"): Promise<void> {
+	const d = db();
+	const rows = await d.select({ id: siteImages.id, group: siteImages.group, sort: siteImages.sort }).from(siteImages);
+	const me = rows.find((r) => r.id === id);
+	if (!me) return;
+	const siblings = rows
+		.filter((r) => r.group === me.group)
+		.sort((a, b) => a.sort - b.sort);
+	const i = siblings.findIndex((r) => r.id === id);
+	const j = dir === "up" ? i - 1 : i + 1;
+	if (j < 0 || j >= siblings.length) return;
+	const other = siblings[j];
+	await d.update(siteImages).set({ sort: other.sort }).where(eq(siteImages.id, me.id));
+	await d.update(siteImages).set({ sort: me.sort }).where(eq(siteImages.id, other.id));
+}
+
+/**
+ * The shop logo for the header/footer/hero: the uploaded one when there is one,
+ * otherwise "" and the built-in brand-logo.png is used.
+ * (Falls back to a logo saved the old way, inside the settings JSON.)
+ */
+export async function getLogoUrl(): Promise<string> {
+	const rows = await listSiteImages("logo");
+	if (rows[0]) return rows[0].url;
+	const s = await getSettings();
+	return s.logo || "";
 }
 
 export async function createProduct(p: {

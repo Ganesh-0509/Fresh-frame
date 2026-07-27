@@ -9,7 +9,9 @@ import {
 	createCategoryAction,
 	renameCategoryAction,
 	deleteCategoryAction,
+	saveCategoryImageAction,
 } from "./actions";
+import PhotoPicker from "../PhotoPicker";
 
 export default function ProductEditor({
 	categories,
@@ -85,14 +87,22 @@ export default function ProductEditor({
 			{/* category management */}
 			{mgmt && (
 				<div className="mb-5 rounded-xl border border-line bg-row p-4">
-					<h3 className="mb-2 text-[15px] font-bold text-ink">
+					<h3 className="mb-1 text-[15px] font-bold text-ink">
 						{LINES.find((l) => l.id === line)?.name} categories
 					</h3>
+					<p className="mb-3 text-[13px] text-muted">
+						The picture you add here is used on the home page and at the top of that category
+						on the price list — and for any product in it that has no photo of its own.
+					</p>
 					<div className="space-y-2">
 						{cats.map((c) => {
 							const count = products.filter((p) => p.categoryId === c.id).length;
 							return (
 								<div key={c.id} className="flex flex-wrap items-center gap-2">
+									<form action={saveCategoryImageAction} className="flex items-center">
+										<input type="hidden" name="id" value={c.id} />
+										<PhotoPicker alt={c.name} current={c.image} size={48} />
+									</form>
 									<form action={renameCategoryAction} className="flex flex-1 items-center gap-2">
 										<input type="hidden" name="id" value={c.id} />
 										<input name="name" defaultValue={c.name} className={cell} />
@@ -158,7 +168,8 @@ export default function ProductEditor({
 
 			{/* editable rows */}
 			<div className="space-y-2">
-				<div className="hidden grid-cols-[1fr_130px_84px_84px_64px_84px_120px] gap-2 px-1 text-[12px] font-semibold uppercase tracking-wide text-muted sm:grid">
+				<div className="hidden grid-cols-[132px_1fr_130px_84px_84px_64px_84px_120px] gap-2 px-1 text-[12px] font-semibold uppercase tracking-wide text-muted sm:grid">
+					<span>Photo</span>
 					<span>Product name</span>
 					<span>Pack</span>
 					<span>Old price ₹</span>
@@ -171,9 +182,10 @@ export default function ProductEditor({
 					<form
 						key={p.id}
 						action={saveProductAction}
-						className="grid items-center gap-2 rounded-xl border border-line bg-white p-2.5 shadow-sm sm:grid-cols-[1fr_130px_84px_84px_64px_84px_120px]"
+						className="grid items-center gap-2 rounded-xl border border-line bg-white p-2.5 shadow-sm sm:grid-cols-[132px_1fr_130px_84px_84px_64px_84px_120px]"
 					>
 						<input type="hidden" name="id" value={p.id} />
+						<PhotoPicker alt={p.name} current={p.image} />
 						<input name="name" defaultValue={p.name} className={cell} />
 						<input name="content" defaultValue={p.content} className={cell} />
 						<input name="mrp" type="number" min={0} defaultValue={p.mrp} className={cell} />
@@ -209,6 +221,10 @@ export default function ProductEditor({
 				)}
 			</div>
 			<p className="mt-3 text-[13px] text-muted">
+				Tip: <b className="text-ink-soft">Photo</b> — click the box on the left of any product and pick a
+				picture from your phone or computer. It saves and goes live by itself; there is no size limit to
+				worry about, we shrink it for you. Click <b>remove</b> to go back to the drawn icon.
+				<br />
 				Tip: <b className="text-ink-soft">Stock</b> — leave it as <b>−1</b> for &ldquo;always available&rdquo;, or set <b>0</b> to show &ldquo;Sold out&rdquo;.
 			</p>
 		</div>
