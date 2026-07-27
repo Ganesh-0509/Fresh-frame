@@ -32,6 +32,24 @@
 			"service": "app"
 		}
 	],
+	/**
+	 * Custom domain. The zone `standardfireworkssivakasi.com` is ACTIVE on Cloudflare
+	 * (nameservers janet/plato, moved off Hostinger) and sits in the SAME account as this
+	 * Worker (535ddac549978207b60a2e297b3abd88) — which is what `custom_domain` requires.
+	 *
+	 * On `npm run deploy` wrangler creates the DNS records and orders the TLS certificate
+	 * itself. Nothing to add by hand in the Cloudflare DNS tab.
+	 *
+	 * Safe to do: the zone has NO MX records (checked 2026-07-27), so there is no email on
+	 * this domain to break — the shop uses a Gmail address.
+	 *
+	 * www is served too; canonical tags point at the apex (layout.tsx `metadataBase`), so
+	 * Google still indexes one URL.
+	 */
+	"routes": [
+		{ "pattern": "standardfireworkssivakasi.com", "custom_domain": true },
+		{ "pattern": "www.standardfireworkssivakasi.com", "custom_domain": true }
+	],
 	// D1 database for orders / enquiries / admin.
 	"d1_databases": [
 		{
