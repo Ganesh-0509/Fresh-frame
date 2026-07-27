@@ -3,7 +3,7 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { publicSite } from "@/lib/site";
-import { getSettings } from "@/lib/catalog";
+import { getSettings, listSiteImages } from "@/lib/catalog";
 import {
 	ShieldIcon,
 	LeafIcon,
@@ -62,8 +62,11 @@ const SAFETY: Item[] = [
 ];
 
 export default async function AboutPage() {
-	const site = publicSite(await getSettings());
+	const [settings, photos] = await Promise.all([getSettings(), listSiteImages("about")]);
+	const site = publicSite(settings);
 	const storyParas = site.aboutStory.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+	// First uploaded picture sits beside the story; the rest become a strip below it.
+	const [lead, ...rest] = photos;
 	return (
 		<>
 			<PageHeader
@@ -73,11 +76,31 @@ export default async function AboutPage() {
 
 			<section className="py-12">
 				<div className="mx-auto grid max-w-[1170px] items-center gap-10 px-4 md:grid-cols-2">
-					<div className="ph aspect-[4/3]">
-						[ Shop / godown photo ]
-						<br />
-						approx. 1200×900
-					</div>
+					{lead ? (
+						<figure>
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={lead.url}
+								alt={lead.caption || `${site.name} shop`}
+								className="aspect-[4/3] w-full rounded-xl border border-line object-cover shadow-sm"
+							/>
+							{lead.caption && (
+								<figcaption className="mt-2 text-center text-[15px] text-muted">{lead.caption}</figcaption>
+							)}
+						</figure>
+					) : (
+						// No photo uploaded yet (admin → Photos) — a plain brand panel, never an
+						// empty "[ photo here ]" box on a live customer-facing page.
+						<div className="night-bg grid aspect-[4/3] place-items-center rounded-xl px-6 text-center text-white shadow-sm">
+							<div>
+								<p className="text-[13px] font-semibold uppercase tracking-[0.3em] text-yellow">
+									Since 2014
+								</p>
+								<p className="mt-2 text-2xl font-bold">{site.name}</p>
+								<p className="mt-1 text-[15px] text-white/80">{site.addressLine}</p>
+							</div>
+						</div>
+					)}
 					<div>
 						<h2 className="mb-4 text-2xl font-semibold text-ink">Our story</h2>
 						{storyParas.map((para, i) => (
@@ -96,6 +119,32 @@ export default async function AboutPage() {
 					</div>
 				</div>
 			</section>
+
+			{/* Owner's other shop photos (admin → Photos). Hidden until there are some. */}
+			{rest.length > 0 && (
+				<section className="pb-12">
+					<div className="mx-auto max-w-[1170px] px-4">
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+							{rest.map((ph) => (
+								<figure key={ph.id}>
+									{/* eslint-disable-next-line @next/next/no-img-element */}
+									<img
+										src={ph.url}
+										alt={ph.caption || `${site.name} photo`}
+										loading="lazy"
+										className="aspect-[4/3] w-full rounded-xl border border-line object-cover shadow-sm"
+									/>
+									{ph.caption && (
+										<figcaption className="mt-1.5 text-center text-[14.5px] text-muted">
+											{ph.caption}
+										</figcaption>
+									)}
+								</figure>
+							))}
+						</div>
+					</div>
+				</section>
+			)}
 
 			{/* Inline icon-left rows, left-aligned heading — not the icon-over-heading card grid. */}
 			<section className="bg-shell py-14">

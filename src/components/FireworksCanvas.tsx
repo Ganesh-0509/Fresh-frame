@@ -119,9 +119,11 @@ export default function FireworksCanvas({ className = "" }: { className?: string
 			raf = requestAnimationFrame(tick);
 			frame++;
 
-			// Trails fade by painting a translucent dark veil each frame.
-			ctx.globalCompositeOperation = "source-over";
-			ctx.fillStyle = "rgba(16, 4, 8, 0.22)";
+			// Trails fade by ERASING the canvas's own pixels, not by painting a dark
+			// veil over them — a veil is opaque to whatever sits behind the canvas and
+			// would progressively black out the hero background image.
+			ctx.globalCompositeOperation = "destination-out";
+			ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
 			ctx.fillRect(0, 0, W, H);
 			ctx.globalCompositeOperation = "lighter";
 

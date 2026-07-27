@@ -67,6 +67,46 @@ body {
 		linear-gradient(180deg, var(--color-night) 0%, var(--color-night-2) 55%, var(--color-night) 100%);
 }
 
+/* ============================================================
+   HEADER STACK — four bands that have to READ as four bands.
+   They used to be #4a121c / #611825 / #2a0c12 / #240810: four shades
+   of one dark maroon, so the whole top of the page collapsed into a
+   single flat slab above the hero. The fix is a brightness rhythm —
+   darkest → BRIGHTEST → dark → hero image — with gold hairlines doing
+   the separating.
+   ============================================================ */
+
+/* 1. Utility strip — the darkest note on the page, so the stack has a lid. */
+.top-bar {
+	background: linear-gradient(180deg, #1d0609 0%, #150407 100%);
+	border-bottom: 1px solid rgba(201, 162, 39, 0.22);
+}
+
+/* 2. Brand band — deliberately the BRIGHTEST band, because it carries the
+   logo. This is the step that breaks up the slab. */
+.brand-bar {
+	position: relative;
+	background:
+		radial-gradient(620px 190px at 16% 50%, rgba(233, 198, 94, 0.17), transparent 72%),
+		linear-gradient(180deg, #9c2837 0%, #8a2231 55%, #751c29 100%);
+	border-bottom: 2px solid var(--color-yellow);
+}
+/* foil highlight catching the light along the top edge */
+.brand-bar::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, rgba(255, 226, 150, 0.55), transparent);
+}
+
+/* 3. Nav — back down to dark, framed in gold so it reads as its own bar
+   rather than the bottom of the brand band. */
+.nav-bar {
+	background: linear-gradient(180deg, #300d15 0%, #230a10 100%);
+	border-bottom: 1px solid rgba(201, 162, 39, 0.38);
+}
+
 /* Section heading used across the site: centred title + subtitle */
 .section-title {
 	text-align: center;

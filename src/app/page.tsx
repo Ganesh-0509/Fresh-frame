@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { money, publicSite } from "@/lib/site";
-import { getSettings } from "@/lib/catalog";
+import { getSettings, getLogoUrl, getCatalog, listSiteImages } from "@/lib/catalog";
 import { CATEGORIES } from "@/lib/catalogue";
 import Fireworks from "@/components/Fireworks";
 import FireworksCanvas from "@/components/FireworksCanvas";
@@ -41,7 +41,19 @@ const FEATURES: { Icon: ComponentType<{ className?: string }>; title: string; bo
 ];
 
 export default async function Home() {
-	const site = publicSite(await getSettings());
+	const [settings, logoUrl, catalog, banners] = await Promise.all([
+		getSettings(),
+		getLogoUrl(),
+		getCatalog(),
+		listSiteImages("banner"),
+	]);
+	const site = publicSite(settings, logoUrl);
+	// Featured strip: the real categories (so the owner's category photos show up),
+	// falling back to the static showcase list if the database is unreachable.
+	const featured = catalog.categories.filter((c) => c.line === "standard");
+	const featuredItems = featured.length
+		? featured.map((c) => ({ id: c.id, name: c.name, image: c.image }))
+		: CATEGORIES.map((c) => ({ id: c.id, name: c.name, image: "" }));
 	return (
 		<>
 			{/* ---------- TORAN / GARLAND ---------- */}
@@ -49,6 +61,30 @@ export default async function Home() {
 
 			{/* ---------- HERO ---------- */}
 			<section className="night-bg relative overflow-hidden">
+				{/*
+				 * Hero backdrop, built from the client's supplied artwork with all of its
+				 * baked-in text removed (see hero-sample/make-textfree.py). Two crops: the
+				 * wide band, and a portrait recomposition for phones — cropping the wide one
+				 * to a phone leaves almost no artwork visible.
+				 * Painted before the canvas/sparkles below so they animate on top of it.
+				 */}
+				<picture>
+					<source media="(max-width: 639px)" srcSet="/hero-bg-mobile.jpg" />
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img
+						src="/hero-bg.jpg"
+						alt=""
+						aria-hidden
+						fetchPriority="high"
+						decoding="async"
+						className="absolute inset-0 h-full w-full object-cover object-bottom"
+					/>
+				</picture>
+				{/* Darkens the headline side so the gold type keeps its contrast. */}
+				<div
+					aria-hidden
+					className="absolute inset-0 bg-[linear-gradient(180deg,rgba(36,8,16,0.72)_0%,rgba(36,8,16,0.62)_60%,rgba(36,8,16,0.45)_100%)] sm:bg-[linear-gradient(90deg,rgba(36,8,16,0.80)_0%,rgba(36,8,16,0.45)_48%,rgba(36,8,16,0.12)_100%)]"
+				/>
 				<FireworksCanvas />
 				<Fireworks />
 				{/* hanging diyas — hand-drawn SVG lamps, not emoji */}
@@ -67,14 +103,20 @@ export default async function Home() {
 						<Reveal className="text-center lg:text-left">
 							<div className="mb-5 flex justify-center lg:justify-start">
 								<span className="logo-halo float inline-flex">
-									<Image
-										src="/brand-logo.png"
-										alt="Standard Fireworks"
-										width={411}
-										height={108}
-										priority
-										className="h-14 w-auto sm:h-16"
-									/>
+									{site.logo ? (
+										// Owner-uploaded logo (admin → Photos); served from D1, so a plain <img>.
+										// eslint-disable-next-line @next/next/no-img-element
+										<img src={site.logo} alt={site.name} className="h-14 w-auto sm:h-16" />
+									) : (
+										<Image
+											src="/brand-logo.png"
+											alt="Standard Fireworks"
+											width={411}
+											height={108}
+											priority
+											className="h-14 w-auto sm:h-16"
+										/>
+									)}
 								</span>
 							</div>
 							<p className="text-[14px] font-semibold tracking-[0.3em] text-yellow">
@@ -143,6 +185,32 @@ export default async function Home() {
 				</div>
 			</section>
 
+			{/* ---------- OWNER BANNERS (admin → Photos; the section hides itself when empty) ---------- */}
+			{banners.length > 0 && (
+				<section className="pt-10">
+					<div className="mx-auto max-w-[1170px] px-4">
+						<div className={`grid gap-4 ${banners.length > 1 ? "sm:grid-cols-2" : ""}`}>
+							{banners.map((b, i) => (
+								<figure key={b.id} className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
+									{/* eslint-disable-next-line @next/next/no-img-element */}
+									<img
+										src={b.url}
+										alt={b.caption || `${site.name} banner`}
+										loading={i === 0 ? "eager" : "lazy"}
+										className="h-full max-h-[380px] w-full object-cover"
+									/>
+									{b.caption && (
+										<figcaption className="px-4 py-2.5 text-center text-[15px] font-medium text-ink-soft">
+											{b.caption}
+										</figcaption>
+									)}
+								</figure>
+							))}
+						</div>
+					</div>
+				</section>
+			)}
+
 			{/* ---------- FEATURED (auto-advancing carousel — one at a time) ---------- */}
 			<section className="py-12">
 				<div className="mx-auto max-w-[1000px] px-4">
@@ -157,10 +225,8 @@ export default async function Home() {
 					</div>
 
 					<FeaturedCarousel
-						items={CATEGORIES.map((c) => ({ id: c.id, name: c.name }))}
+						items={featuredItems}
 						discountPct={site.discountPct}
-						whatsapp={site.whatsapp}
-						brand={site.name}
 					/>
 				</div>
 			</section>

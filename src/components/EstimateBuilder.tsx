@@ -213,8 +213,19 @@ export default function EstimateBuilder({
 				if (!items.length) return null;
 				return (
 					<section key={c.id} id={c.id} className="mb-10 scroll-mt-28">
-						<h3 className="mb-3 flex items-center gap-2 border-b-2 border-brand pb-2 text-lg font-semibold text-ink">
-							<CategoryIcon id={c.id} className="h-5 w-5 text-brand" /> {c.name}
+						<h3 className="mb-3 flex items-center gap-2.5 border-b-2 border-brand pb-2 text-lg font-semibold text-ink">
+							{c.image ? (
+								// eslint-disable-next-line @next/next/no-img-element
+								<img
+									src={c.image}
+									alt={c.name}
+									loading="lazy"
+									className="h-9 w-9 rounded border border-line object-cover"
+								/>
+							) : (
+								<CategoryIcon id={c.id} className="h-5 w-5 text-brand" />
+							)}
+							{c.name}
 						</h3>
 						<div className="overflow-x-auto border border-line">
 							<table className="w-full min-w-[760px] table-fixed border-collapse text-[16px]">
@@ -245,9 +256,21 @@ export default function EstimateBuilder({
 											<tr key={p.id} className={i % 2 ? "bg-row-alt" : "bg-white"}>
 												<td className="px-3 py-2.5">
 													<div className="flex items-center gap-2.5">
-														<span className="grid h-10 w-10 flex-none place-items-center rounded border border-line bg-gradient-to-br from-[#fff7e6] to-[#fdeccb]">
-															<CategoryIcon id={c.id} className="h-6 w-6 text-brand" />
-														</span>
+														{/* The product's own photo, else its category photo, else the drawn icon. */}
+														{p.image || c.image ? (
+															// eslint-disable-next-line @next/next/no-img-element
+															<img
+																src={p.image || c.image}
+																alt={p.name}
+																loading="lazy"
+																decoding="async"
+																className="h-10 w-10 flex-none rounded border border-line bg-white object-cover"
+															/>
+														) : (
+															<span className="grid h-10 w-10 flex-none place-items-center rounded border border-line bg-gradient-to-br from-[#fff7e6] to-[#fdeccb]">
+																<CategoryIcon id={c.id} className="h-6 w-6 text-brand" />
+															</span>
+														)}
 														<span>
 															<span className="block font-medium text-ink">
 																{p.name}
