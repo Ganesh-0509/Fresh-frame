@@ -20,6 +20,8 @@ export const orders = sqliteTable("orders", {
 	address: text("address").notNull(),
 	city: text("city").notNull(),
 	state: text("state").notNull(),
+	area: text("area"), // locality inside the city (3rd delivery level)
+	areaMap: text("area_map"), // Google Maps link of that area's delivery point
 	pincode: text("pincode").notNull(),
 	email: text("email"),
 	gstNo: text("gst_no"),
@@ -34,7 +36,28 @@ export const orders = sqliteTable("orders", {
 	screenshotData: text("screenshot_data"), // payment receipt (compressed data URL)
 	paymentRef: text("payment_ref"),
 	adminNote: text("admin_note"),
+	couponCode: text("coupon_code"), // code the customer redeemed
+	couponDiscount: integer("coupon_discount").notNull().default(0), // ₹ it took off
+	// Spend-more-save-more slab, frozen at order time (the owner can edit the slabs later).
+	tierDiscount: integer("tier_discount").notNull().default(0),
+	tierLabel: text("tier_label"), // wording the customer saw, e.g. "Spend ₹10,000+"
 	source: text("source").notNull().default("website"),
+});
+
+export const coupons = sqliteTable("coupons", {
+	code: text("code").primaryKey(),
+	kind: text("kind").notNull(), // 'flat' | 'percent'
+	value: integer("value").notNull(),
+	maxDiscount: integer("max_discount").notNull().default(0),
+	minOrder: integer("min_order").notNull().default(0),
+	phone: text("phone"),
+	customerName: text("customer_name"),
+	maxUses: integer("max_uses").notNull().default(1),
+	active: integer("active").notNull().default(1),
+	expiresAt: integer("expires_at"),
+	createdAt: integer("created_at").notNull(),
+	note: text("note"),
+	fromOrder: text("from_order"),
 });
 
 export type OrderRow = typeof orders.$inferSelect;
@@ -72,7 +95,7 @@ export const PROCESSING_STATUSES: OrderStatus[] = ["confirmed", "packing", "read
 export function getDb() {
 	const { env } = getCloudflareContext();
 	if (!env.DB) throw new Error("D1 binding 'DB' is not configured.");
-	return drizzle(env.DB, { schema: { orders } });
+	return drizzle(env.DB, { schema: { orders, coupons } });
 }
 
 export type OrderItem = {

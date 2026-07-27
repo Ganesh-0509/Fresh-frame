@@ -29,6 +29,15 @@ export const SITE = {
   minOrder: 3000,
   discountPct: 50,
 
+  // ---- ⚠️ PRICE STATE — the most important switch on the site ----
+  // TRUE while the catalogue holds PLACEHOLDER prices (generated for demo and for
+  // testing the discount slabs — they are NOT the client's real rates).
+  // While true the site is `noindex` and every price-bearing page shows a visible
+  // "indicative prices" notice, so no customer can order at an invented rate and
+  // Google never caches a fake price list.
+  // 👉 Flip to FALSE the moment the client's real prices are loaded, then redeploy.
+  pricesAreProvisional: true,
+
   // ---- SPEND-BASED EXTRA DISCOUNT SLABS (shown on the hero banner) ----
   // ⚠️ Placeholder percentages — CLIENT to confirm the real slabs.
   // Spend at least `min` (in ₹) → get `extra`% off ON TOP of the base discount.
@@ -93,6 +102,48 @@ export const sellPrice = (listPrice: number) =>
  */
 export type DiscountTier = { min: number; extra: number; label: string };
 
+/**
+ * Level 3 of the delivery hierarchy: State → City → Area.
+ * An area is the actual delivery/collection point inside a city (e.g. "Anna Nagar"
+ * inside Chennai). `mapUrl` is the Google Maps link the owner pastes in /admin —
+ * it is shown to the customer at checkout and emailed on dispatch. "" = no link.
+ */
+export type ServiceArea = { name: string; mapUrl: string };
+
+/** Key used for `Settings.serviceAreas` — areas belong to a (state, city) pair. */
+export const areaKey = (state: string, city: string) => `${state}::${city}`;
+
+/** Areas the owner has listed for a city, or [] when they haven't added any yet. */
+export const areasFor = (
+  serviceAreas: Record<string, ServiceArea[]>,
+  state: string,
+  city: string,
+): ServiceArea[] => (state && city ? serviceAreas[areaKey(state, city)] ?? [] : []);
+
+/**
+ * Normalise a pasted map link. Owners paste anything — a full
+ * https://maps.app.goo.gl/... link, or just "maps.app.goo.gl/xyz". Anything that
+ * isn't a usable web link is dropped so we never render a broken/unsafe href.
+ */
+/**
+ * A payment-receipt screenshot is uploaded by an ANONYMOUS customer and is later
+ * rendered in the admin panel as both <img src> and <a href>. Without this check
+ * a crafted request could store `javascript:…`, which would then run in the
+ * owner's admin session the moment he clicks the receipt. Only inline image data
+ * is ever accepted.
+ */
+export function isSafeImageDataUrl(v: string): boolean {
+  return /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\s]+$/i.test(v.trim());
+}
+
+export function cleanMapUrl(raw: string): string {
+  const v = raw.trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (/^[\w.-]+\.[a-z]{2,}\//i.test(v)) return `https://${v}`;
+  return "";
+}
+
 export type Settings = {
   phone: string;
   whatsapp: string;
@@ -111,6 +162,10 @@ export type Settings = {
   transportFees: Record<string, number>;
   // Serviceable cities per state (checkout city is a dropdown of these).
   serviceCities: Record<string, string[]>;
+  // Areas/localities per city — keyed by `areaKey(state, city)`. Third dropdown at
+  // checkout; each area carries its own Google Maps link. Missing/empty → the
+  // area step is skipped for that city.
+  serviceAreas: Record<string, ServiceArea[]>;
   // GST percentage applied at checkout. 0 = no GST line shown.
   gstPct: number;
   // Whether a UTR (transaction id) is required on the payment-confirmation step.
@@ -175,6 +230,9 @@ export const DEFAULT_SETTINGS: Settings = {
   serviceStates: [...SITE.serviceStates],
   transportFees: DEFAULT_TRANSPORT,
   serviceCities: DEFAULT_CITIES,
+  // Empty on purpose — an area is useless without the owner's REAL Google Maps
+  // pin, so they add these in /admin → Settings → "Delivery charge & places".
+  serviceAreas: {},
   gstPct: 0, // off by default — client enables (e.g. 18) in admin if invoicing GST
   requireUtr: true,
   metaTitle: `${SITE.name} — Sivakasi Crackers Wholesale Price List, Chennai`,
@@ -207,11 +265,13 @@ export const DEFAULT_SETTINGS: Settings = {
  * Public pages/components consume THIS (via getSettings), so admin edits show
  * up immediately on the live site.
  */
-export function publicSite(s: Settings) {
+export function publicSite(s: Settings, logoUrl = "") {
   return {
     name: SITE.name,
     shortName: SITE.shortName,
     domain: SITE.domain,
+    // Owner-uploaded logo (from /admin/photos). "" → the built-in brand-logo.png.
+    logo: logoUrl,
     tagline: s.tagline,
     phone: s.phone,
     whatsapp: s.whatsapp,
@@ -247,6 +307,36 @@ export type PublicSite = ReturnType<typeof publicSite>;
 /** GST amount for a subtotal at the given rate. */
 export const gstAmount = (subtotal: number, pct: number) =>
   pct > 0 ? Math.round((subtotal * pct) / 100) : 0;
+
+/**
+ * Spend-more-save-more: the best slab a product subtotal qualifies for, or null.
+ *
+ * The hero advertises these ("Spend ₹10,000+ → +6% extra off"), so checkout MUST
+ * honour them — for a long time it advertised them and didn't, which meant the
+ * site promised a discount it never gave.
+ *
+ * Highest qualifying `min` wins; slabs are not stacked. `extra` is a percentage
+ * ON TOP of the base list discount that is already baked into `product.price`.
+ */
+export function bestTier(subtotal: number, tiers: DiscountTier[]): DiscountTier | null {
+  let best: DiscountTier | null = null;
+  for (const t of tiers) {
+    if (t.min > 0 && t.extra > 0 && subtotal >= t.min && (!best || t.min > best.min)) best = t;
+  }
+  return best;
+}
+
+/**
+ * ₹ taken off by the spend slab. Computed on the PRODUCT SUBTOTAL only — never on
+ * transport (we don't subsidise the lorry) and never compounded with the coupon:
+ * both this and a discount code are worked out from the same pre-discount subtotal
+ * and then added together, so the customer can predict the number and the owner
+ * can explain it on the phone.
+ */
+export const tierDiscount = (subtotal: number, tiers: DiscountTier[]): number => {
+  const t = bestTier(subtotal, tiers);
+  return t ? Math.round((subtotal * t.extra) / 100) : 0;
+};
 
 export const waLinkTo = (whatsapp: string, message: string) =>
   `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;

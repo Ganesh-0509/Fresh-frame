@@ -2,7 +2,9 @@
 
 /**
  * 4-step checkout (per client spec):
- *   1. Details — name / phone / email(opt) / GST no(opt) / address / state / city / pincode
+ *   1. Details — name / phone / email(opt) / GST no(opt) / address / state / city / area / pincode
+ *      (state → city → area is a 3-level dropdown driven by the owner's settings;
+ *       the chosen area carries a Google Maps link to the delivery point)
  *   2. Order created (status "Pending payment", visible in admin) → Payment page: QR + amount + Order ID
  *   3. Confirm — "I have completed payment" → enter UTR + upload receipt screenshot → "Pending verification"
  *   4. Done — thank you; admin verifies → auto-email
@@ -11,9 +13,9 @@
  * supplies UTR + screenshot and the admin approves. No payment gateway.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { money, gstAmount, type Settings } from "@/lib/site";
+import { money, gstAmount, areasFor, bestTier, tierDiscount, type Settings } from "@/lib/site";
 import { type CatProduct } from "@/lib/catalog-types";
 import { useCart, selectedItems, cartTotals } from "@/lib/cart";
 
@@ -28,6 +30,7 @@ type Details = {
 	address: string;
 	city: string;
 	state: string;
+	area: string;
 	pincode: string;
 };
 
@@ -40,6 +43,7 @@ const EMPTY: Details = {
 	address: "",
 	city: "",
 	state: "",
+	area: "",
 	pincode: "",
 };
 
@@ -87,24 +91,98 @@ export default function CheckoutFlow({
 	const [shot, setShot] = useState<string>("");
 	const [shotName, setShotName] = useState("");
 
+	// coupon box — `applied` is only ever set from the server's answer
+	const [couponInput, setCouponInput] = useState("");
+	const [applied, setApplied] = useState<{ code: string; discount: number; label: string } | null>(null);
+	const [couponMsg, setCouponMsg] = useState("");
+	const [couponBusy, setCouponBusy] = useState(false);
+
 	const items = useMemo(() => selectedItems(qty, products), [qty, products]);
 	const totals = useMemo(() => cartTotals(qty, products), [qty, products]);
 	const hasPrices = totals.priced > 0;
+	const couponOff = applied?.discount ?? 0;
 
 	const cities = d.state ? settings.serviceCities[d.state] ?? [] : [];
+	// Level 3 — areas inside the chosen city. Empty list → the area step is skipped.
+	const areas = areasFor(settings.serviceAreas ?? {}, d.state, d.city);
+	const area = areas.find((a) => a.name === d.area);
+	const mapUrl = area?.mapUrl ?? "";
 	const transport = d.state ? settings.transportFees[d.state] ?? 0 : 0;
-	const gst = gstAmount(totals.net, settings.gstPct);
-	const grand = totals.net + gst + transport;
+	// The spend-more-save-more slab advertised on the home hero. Automatic — the
+	// customer does nothing to earn it. Worked out from the same pre-discount
+	// subtotal as the coupon so the two never compound into a surprise total.
+	const tier = bestTier(totals.net, settings.discountTiers);
+	const tierOff = tierDiscount(totals.net, settings.discountTiers);
+
+	// Money order: subtotal → spend slab → coupon → GST on what's left → + transport.
+	// Both discounts reduce the taxable value, so GST is charged after them; neither
+	// comes off the transport fee. The site minimum is judged on the PRE-discount
+	// subtotal — a slab or a code shouldn't make an order "too small".
+	const taxable = Math.max(0, totals.net - tierOff - couponOff);
+	const gst = gstAmount(taxable, settings.gstPct);
+	const grand = taxable + gst + transport;
 	const belowMin = hasPrices && totals.net < settings.minOrder;
 
-	const errors = validate(d, cities);
+	const errors = validate(d, cities, areas.map((a) => a.name));
 	const canContinue = Object.keys(errors).length === 0 && !belowMin;
 
 	function set<K extends keyof Details>(k: K, v: string) {
 		setD((prev) => ({ ...prev, [k]: v }));
 	}
 	function setState(v: string) {
-		setD((prev) => ({ ...prev, state: v, city: "" }));
+		setD((prev) => ({ ...prev, state: v, city: "", area: "" }));
+	}
+	function setCity(v: string) {
+		setD((prev) => ({ ...prev, city: v, area: "" }));
+	}
+
+	// A code is judged against a phone number and a subtotal. If either changes
+	// after it was applied, the shown discount may no longer be the one the server
+	// would grant — so drop it and make them apply again rather than show a total
+	// we can't honour. (The order API re-checks regardless.)
+	useEffect(() => {
+		setApplied(null);
+		setCouponMsg("");
+	}, [d.phone, totals.net]);
+
+	/** Ask the server whether this code is good for this customer + this subtotal. */
+	async function applyCoupon() {
+		const code = couponInput.trim();
+		if (!code || couponBusy) return;
+		setCouponBusy(true);
+		setCouponMsg("");
+		try {
+			const res = await fetch("/api/coupons/validate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code, phone: d.phone, subtotal: totals.net }),
+			});
+			const data = (await res.json()) as {
+				ok?: boolean;
+				code?: string;
+				discount?: number;
+				label?: string;
+				message?: string;
+			};
+			if (data.ok && data.code) {
+				setApplied({ code: data.code, discount: data.discount ?? 0, label: data.label ?? "" });
+				setCouponMsg("");
+			} else {
+				setApplied(null);
+				setCouponMsg(data.message || "That code can't be used.");
+			}
+		} catch {
+			setApplied(null);
+			setCouponMsg("Could not check that code. Please try again.");
+		} finally {
+			setCouponBusy(false);
+		}
+	}
+
+	function removeCoupon() {
+		setApplied(null);
+		setCouponInput("");
+		setCouponMsg("");
 	}
 
 	/** Step 1 → create the order (before payment) → Step 2. */
@@ -130,8 +208,11 @@ export default function CheckoutFlow({
 					address: d.address,
 					city: d.city,
 					state: d.state,
+					area: d.area,
+					areaMap: mapUrl,
 					pincode: d.pincode,
 					total: totals.net,
+					coupon: applied?.code ?? "",
 					gst,
 					transport,
 					grandTotal: grand,
@@ -147,9 +228,17 @@ export default function CheckoutFlow({
 					})),
 				}),
 			});
-			if (!res.ok) throw new Error();
-			const data = (await res.json()) as { id?: string };
-			if (!data.id) throw new Error();
+			const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string; couponError?: string };
+			// The server re-judges the code. If it refuses, say why and drop it rather
+			// than quietly charging a total the customer never agreed to.
+			if (data.couponError) {
+				setApplied(null);
+				setCouponMsg(data.couponError);
+				setErr("Your discount code could not be used — please check it and try again.");
+				window.scrollTo({ top: 0, behavior: "smooth" });
+				return;
+			}
+			if (!res.ok || !data.id) throw new Error();
 			setOrderId(data.id);
 			setStep("pay");
 			window.scrollTo({ top: 0, behavior: "smooth" });
@@ -215,7 +304,10 @@ export default function CheckoutFlow({
 			{step === "details" && (
 				<div className="grid gap-6 md:grid-cols-[1fr_320px]">
 					<div>
-						<h2 className="mb-4 text-lg font-semibold text-ink">Your details</h2>
+						<h2 className="text-lg font-semibold text-ink">Your details</h2>
+						<p className="mb-4 mt-0.5 text-[14px] text-muted">
+							Fields marked <span className="font-semibold text-brand">*</span> are required.
+						</p>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<Field label="Full name" required error={touched ? errors.name : undefined}>
 								<input value={d.name} onChange={(e) => set("name", e.target.value)} className={inputCls} placeholder="Your name" />
@@ -247,17 +339,95 @@ export default function CheckoutFlow({
 								</select>
 							</Field>
 							<Field label="City / Town" required hint={d.state ? "we deliver to these only" : "select state first"} error={touched ? errors.city : undefined}>
-								<select value={d.city} onChange={(e) => set("city", e.target.value)} disabled={!d.state} className={`${inputCls} disabled:cursor-not-allowed disabled:bg-row disabled:text-muted`}>
+								<select value={d.city} onChange={(e) => setCity(e.target.value)} disabled={!d.state} className={`${inputCls} disabled:cursor-not-allowed disabled:bg-row disabled:text-muted`}>
 									<option value="">{d.state ? "Select city…" : "Select state first"}</option>
 									{cities.map((c) => (<option key={c} value={c}>{c}</option>))}
 								</select>
 							</Field>
+							{/* Level 3 — only shown when the owner has listed areas for this city. */}
+							{areas.length > 0 && (
+								<div className="sm:col-span-2">
+									<Field label="Area / delivery point" required hint={`inside ${d.city}`} error={touched ? errors.area : undefined}>
+										<select value={d.area} onChange={(e) => set("area", e.target.value)} className={inputCls}>
+											<option value="">Select area…</option>
+											{areas.map((a) => (<option key={a.name} value={a.name}>{a.name}</option>))}
+										</select>
+									</Field>
+									{d.area && (
+										mapUrl ? (
+											<a href={mapUrl} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center gap-1.5 text-[14px] font-medium text-brand hover:underline">
+												📍 View {d.area} delivery point on Google Maps ↗
+											</a>
+										) : (
+											<p className="mt-1.5 text-[14px] text-muted">We&apos;ll share the exact {d.area} pickup point when your order is dispatched.</p>
+										)
+									)}
+								</div>
+							)}
 						</div>
 
 						{d.state && cities.length === 0 && (
 							<p className="mt-2 text-[14px] text-brand">Sorry, we don&apos;t have a delivery point in {d.state} yet — please contact us.</p>
 						)}
 						<p className="mt-3 text-[14px] text-muted">Transport to your nearest transport office; a per-state fee is added at payment.</p>
+
+						{/* ---- coupon ---- */}
+						<div className="mt-5 border border-line bg-shell p-4">
+							{applied ? (
+								<div className="flex flex-wrap items-center justify-between gap-3">
+									<div>
+										<p className="text-[15px] font-semibold text-ink">
+											🎟️ Code <span className="font-bold text-brand">{applied.code}</span> applied
+										</p>
+										<p className="text-[14px] text-muted">
+											{applied.label} — you save {money(applied.discount)}
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={removeCoupon}
+										className="border border-line bg-white px-3 py-1.5 text-[14px] font-medium text-ink-soft hover:bg-row"
+									>
+										Remove
+									</button>
+								</div>
+							) : (
+								<>
+									<label className="mb-1 block text-[14px] font-medium text-ink-soft">
+										Have a discount code?
+										<span className="ml-1 font-normal text-muted">(if we gave you one)</span>
+									</label>
+									<div className="flex flex-wrap gap-2">
+										<input
+											value={couponInput}
+											onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") {
+													e.preventDefault();
+													applyCoupon();
+												}
+											}}
+											placeholder="e.g. SF-7K4Q2"
+											className={`${inputCls} w-auto flex-1`}
+										/>
+										<button
+											type="button"
+											onClick={applyCoupon}
+											disabled={couponBusy || !couponInput.trim()}
+											className="border border-brand bg-white px-4 py-2 text-[15px] font-semibold text-brand hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											{couponBusy ? "Checking…" : "Apply"}
+										</button>
+									</div>
+									{couponMsg && <p className="mt-2 text-[14px] text-brand">{couponMsg}</p>}
+									{!couponMsg && (
+										<p className="mt-2 text-[13.5px] text-muted">
+											Enter your phone number above first — codes are issued to a specific number.
+										</p>
+									)}
+								</>
+							)}
+						</div>
 
 						<div className="mt-6 flex items-center gap-3">
 							<Link href="/products" className="border border-line px-4 py-2.5 text-[15px] font-medium text-ink-soft hover:bg-row">← Edit list</Link>
@@ -273,7 +443,7 @@ export default function CheckoutFlow({
 						)}
 					</div>
 
-					<OrderSummary items={items} totals={totals} gst={gst} gstPct={settings.gstPct} transport={transport} state={d.state} hasPrices={hasPrices} minOrder={settings.minOrder} />
+					<OrderSummary items={items} totals={totals} gst={gst} gstPct={settings.gstPct} transport={transport} state={d.state} city={d.city} area={d.area} mapUrl={mapUrl} couponCode={applied?.code ?? ""} couponOff={couponOff} tierLabel={tier?.label ?? ""} tierOff={tierOff} hasPrices={hasPrices} minOrder={settings.minOrder} />
 				</div>
 			)}
 
@@ -328,7 +498,7 @@ export default function CheckoutFlow({
 						</div>
 					</div>
 
-					<OrderSummary items={items} totals={totals} gst={gst} gstPct={settings.gstPct} transport={transport} state={d.state} hasPrices={hasPrices} minOrder={settings.minOrder} />
+					<OrderSummary items={items} totals={totals} gst={gst} gstPct={settings.gstPct} transport={transport} state={d.state} city={d.city} area={d.area} mapUrl={mapUrl} couponCode={applied?.code ?? ""} couponOff={couponOff} tierLabel={tier?.label ?? ""} tierOff={tierOff} hasPrices={hasPrices} minOrder={settings.minOrder} />
 				</div>
 			)}
 
@@ -383,7 +553,7 @@ export default function CheckoutFlow({
 
 const inputCls = "w-full border border-line bg-white px-3 py-2 text-[16px] text-ink focus:border-brand focus:outline-none";
 
-function validate(d: Details, cities: string[]) {
+function validate(d: Details, cities: string[], areas: string[]) {
 	const e: Partial<Record<keyof Details, string>> = {};
 	if (!d.name.trim()) e.name = "Required";
 	if (d.phone.replace(/\D/g, "").length < 10) e.phone = "Enter a valid 10-digit number";
@@ -392,6 +562,11 @@ function validate(d: Details, cities: string[]) {
 	if (!d.state) e.state = "Required";
 	if (!d.city) e.city = "Select a city";
 	else if (cities.length && !cities.includes(d.city)) e.city = "We don't deliver here";
+	// Area is only required for cities where the owner actually listed areas.
+	if (areas.length) {
+		if (!d.area) e.area = "Select an area";
+		else if (!areas.includes(d.area)) e.area = "We don't deliver here";
+	}
 	if (!/^\d{6}$/.test(d.pincode.trim())) e.pincode = "Enter a 6-digit pincode";
 	return e;
 }
@@ -431,17 +606,24 @@ function Field({ label, required, hint, error, children }: { label: string; requ
 	);
 }
 
-function OrderSummary({ items, totals, gst, gstPct, transport, state, hasPrices, minOrder }: {
+function OrderSummary({ items, totals, gst, gstPct, transport, state, city, area, mapUrl, couponCode, couponOff, tierLabel, tierOff, hasPrices, minOrder }: {
 	items: ReturnType<typeof selectedItems>;
 	totals: ReturnType<typeof cartTotals>;
 	gst: number;
 	gstPct: number;
 	transport: number;
 	state: string;
+	city: string;
+	area: string;
+	mapUrl: string;
+	couponCode: string;
+	couponOff: number;
+	tierLabel: string;
+	tierOff: number;
 	hasPrices: boolean;
 	minOrder: number;
 }) {
-	const grand = totals.net + gst + transport;
+	const grand = Math.max(0, totals.net - tierOff - couponOff) + gst + transport;
 	const belowMin = hasPrices && totals.net < minOrder;
 	return (
 		<aside className="h-max border border-line bg-shell p-4">
@@ -456,6 +638,18 @@ function OrderSummary({ items, totals, gst, gstPct, transport, state, hasPrices,
 			</ul>
 			<div className="mt-3 space-y-1 border-t border-line pt-3 text-[15px]">
 				<Row k="Subtotal" v={hasPrices ? money(totals.net) : "TBC"} />
+				{tierOff > 0 && (
+					<div className="flex justify-between">
+						<span className="text-muted">{tierLabel || "Spend offer"}</span>
+						<span className="font-medium text-[#2f7d4a]">−{money(tierOff)}</span>
+					</div>
+				)}
+				{couponCode && (
+					<div className="flex justify-between">
+						<span className="text-muted">Code {couponCode}</span>
+						<span className="font-medium text-[#2f7d4a]">−{money(couponOff)}</span>
+					</div>
+				)}
 				{gstPct > 0 && <Row k={`GST (${gstPct}%)`} v={money(gst)} />}
 				<Row k="Transport" v={state ? money(transport) : "Select state"} muted={!state} />
 				<div className="flex justify-between border-t border-line pt-2 font-semibold">
@@ -464,6 +658,17 @@ function OrderSummary({ items, totals, gst, gstPct, transport, state, hasPrices,
 				</div>
 				{belowMin && <p className="pt-1 text-[13px] text-brand">Minimum order {money(minOrder)}.</p>}
 			</div>
+			{area && (
+				<div className="mt-3 border-t border-line pt-3 text-[13.5px]">
+					<p className="text-muted">Delivery point</p>
+					<p className="font-medium text-ink">{area}, {city}</p>
+					{mapUrl && (
+						<a href={mapUrl} target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-block font-medium text-brand hover:underline">
+							📍 Open in Google Maps ↗
+						</a>
+					)}
+				</div>
+			)}
 		</aside>
 	);
 }

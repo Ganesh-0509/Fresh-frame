@@ -62,7 +62,11 @@ export function statusEmail(order: OrderRow): { subject: string; text: string } 
 			line = `your order ${order.id} is packed and ready to dispatch.`;
 			break;
 		case "dispatched":
-			line = `good news — order ${order.id} has been dispatched 🚚. Collect it from your nearest transport office; we'll share the details.`;
+			// The customer picked an area at checkout — send them straight to its map pin.
+			line = order.area
+				? `good news — order ${order.id} has been dispatched 🚚. Collect it from the ${order.area} delivery point (${order.city}).` +
+					(order.areaMap ? `\n\nLocation on Google Maps: ${order.areaMap}` : "")
+				: `good news — order ${order.id} has been dispatched 🚚. Collect it from your nearest transport office; we'll share the details.`;
 			break;
 		case "delivered":
 			line = `hope you received order ${order.id} safely. Have a safe and happy Deepavali! 🎆`;
@@ -81,7 +85,24 @@ export function statusEmail(order: OrderRow): { subject: string; text: string } 
 
 /** Owner notification when a new order / payment comes in. */
 export function ownerOrderEmail(
-	order: Pick<OrderRow, "id" | "customerName" | "phone" | "city" | "state" | "itemCount" | "grandTotal" | "total" | "hasPrices">,
+	order: Pick<
+		OrderRow,
+		| "id"
+		| "customerName"
+		| "phone"
+		| "city"
+		| "state"
+		| "area"
+		| "areaMap"
+		| "couponCode"
+		| "couponDiscount"
+		| "tierDiscount"
+		| "tierLabel"
+		| "itemCount"
+		| "grandTotal"
+		| "total"
+		| "hasPrices"
+	>,
 	kind: "new" | "payment",
 ): { subject: string; text: string } {
 	const amount = order.hasPrices ? `₹${order.grandTotal || order.total}` : "TBC";
@@ -93,8 +114,15 @@ export function ownerOrderEmail(
 		`${kind === "payment" ? "A customer submitted a payment to verify." : "A new order was placed."}\n\n` +
 		`Order: ${order.id}\n` +
 		`Customer: ${order.customerName} (${order.phone})\n` +
-		`Location: ${order.city}, ${order.state}\n` +
+		`Location: ${order.area ? `${order.area}, ` : ""}${order.city}, ${order.state}\n` +
+		(order.areaMap ? `Delivery point map: ${order.areaMap}\n` : "") +
 		`Items: ${order.itemCount}\n` +
+		(order.tierDiscount
+			? `Spend offer: ${order.tierLabel || "slab"} (−₹${order.tierDiscount})\n`
+			: "") +
+		(order.couponCode
+			? `Discount code: ${order.couponCode} (−₹${order.couponDiscount})\n`
+			: "") +
 		`Amount: ${amount}\n\n` +
 		`Open the admin panel to review it.`;
 	return { subject, text };
