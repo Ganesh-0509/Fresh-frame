@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Modal from "@/components/Modal";
 import Fireworks from "@/components/Fireworks";
-import { SparkBurst, WhatsAppIcon } from "@/components/icons";
-import { type PublicSite, money, waLinkTo } from "@/lib/site";
+import { SparkBurst } from "@/components/icons";
+import { type PublicSite, money } from "@/lib/site";
 
 /**
  * Festive discount popup, shown a short beat after load so it doesn't fight the hero.
@@ -57,6 +57,13 @@ export default function WelcomePopup({ site }: { site: PublicSite }) {
 						{money(site.minOrder)}.
 					</p>
 
+					{/*
+						One way out only: the price list. The popup used to offer "Enquire on
+						WhatsApp" beside it, which sent people into a chat before they had seen a
+						single rate — and then the shop has to quote by hand, which is the work
+						the site exists to remove. Enquiry links still live on the price list and
+						all over the contact page for anyone who wants one.
+					*/}
 					<div className="mt-6 flex flex-col gap-3">
 						<Link
 							href="/products"
@@ -65,15 +72,6 @@ export default function WelcomePopup({ site }: { site: PublicSite }) {
 						>
 							<SparkBurst className="h-4 w-4" /> See the price list
 						</Link>
-						<a
-							href={waLinkTo(site.whatsapp, `Hi ${site.name}, I saw the ${site.discountPct}% Deepavali offer — I'd like to enquire.`)}
-							target="_blank"
-							rel="noopener"
-							onClick={close}
-							className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#25D366] py-3 text-base font-bold text-white shadow-md transition-transform hover:-translate-y-0.5"
-						>
-							<WhatsAppIcon className="h-4 w-4" /> Enquire on WhatsApp
-						</a>
 					</div>
 
 					<button

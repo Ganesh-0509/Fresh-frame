@@ -86,7 +86,7 @@ export const SITE = {
 
   // ---- SEARCH-ENGINE VERIFICATION (paste tokens after registering; "" = not rendered) ----
   // Google Search Console → Settings → Ownership → HTML tag → the content="..." value.
-  googleVerification: "",
+  googleVerification: "A045bXtLodiQlyMnWxsoB9U0DjZ45RYHrrMdsLGF0Sg",
   // Bing Webmaster Tools → verify via meta tag → the content="..." value (msvalidate.01).
   bingVerification: "",
 } as const;

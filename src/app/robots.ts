@@ -1,19 +1,21 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
-import { SITE } from "@/lib/site";
 
 /**
  * robots.txt — let search engines crawl everything except the admin + API.
  *
- * While `SITE.pricesAreProvisional` is true the catalogue holds placeholder
- * prices, so the whole site is closed to crawlers: a cracker price list Google
- * has cached with invented rates is far worse than one it hasn't found yet.
- * Flip that flag when the client's real prices land and this opens up again.
+ * ⚠️ Crawling stays ALLOWED even while `SITE.pricesAreProvisional` is true, and that
+ * is deliberate. Keeping placeholder prices out of Google is the job of the
+ * `noindex` meta tag in layout.tsx — and Googlebot can only obey `noindex` on a
+ * page it is allowed to FETCH. A blanket `Disallow: /` here would hide the very
+ * tag that does the work, and Google can still index a blocked URL it finds from
+ * an external link. Blocking would also break Search Console's HTML-tag
+ * verification, which fetches the home page to read the token.
+ *
+ * So: robots.txt = "you may look", noindex meta = "do not list this". Both are
+ * needed, and only the second one flips with the price flag.
  */
 export default function robots(): MetadataRoute.Robots {
-	if (SITE.pricesAreProvisional) {
-		return { rules: [{ userAgent: "*", disallow: "/" }] };
-	}
 	return {
 		rules: [
 			{

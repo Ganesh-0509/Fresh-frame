@@ -181,8 +181,7 @@ export default function EstimateBuilder({
 					</p>
 				) : (
 					<p className="border-t border-line bg-row px-4 py-2 text-[15px] text-muted">
-						Minimum order {money(settings.minOrder)}. Transport is quoted separately when we
-						call you.
+						Minimum order {money(settings.minOrder)}.
 					</p>
 				)}
 			</div>
