@@ -82,7 +82,7 @@ export default async function AboutPage() {
 							<img
 								src={lead.url}
 								alt={lead.caption || `${site.name} shop`}
-								className="aspect-[4/3] w-full rounded-xl border border-line object-cover shadow-sm"
+								className="aspect-4/3 w-full rounded-xl border border-line object-cover shadow-sm"
 							/>
 							{lead.caption && (
 								<figcaption className="mt-2 text-center text-[15px] text-muted">{lead.caption}</figcaption>
@@ -91,7 +91,7 @@ export default async function AboutPage() {
 					) : (
 						// No photo uploaded yet (admin → Photos) — a plain brand panel, never an
 						// empty "[ photo here ]" box on a live customer-facing page.
-						<div className="night-bg grid aspect-[4/3] place-items-center rounded-xl px-6 text-center text-white shadow-sm">
+						<div className="night-bg grid aspect-4/3 place-items-center rounded-xl px-6 text-center text-white shadow-sm">
 							<div>
 								<p className="text-[13px] font-semibold uppercase tracking-[0.3em] text-yellow">
 									Since 2014
@@ -132,7 +132,7 @@ export default async function AboutPage() {
 										src={ph.url}
 										alt={ph.caption || `${site.name} photo`}
 										loading="lazy"
-										className="aspect-[4/3] w-full rounded-xl border border-line object-cover shadow-sm"
+										className="aspect-4/3 w-full rounded-xl border border-line object-cover shadow-sm"
 									/>
 									{ph.caption && (
 										<figcaption className="mt-1.5 text-center text-[14.5px] text-muted">

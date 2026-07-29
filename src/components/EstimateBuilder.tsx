@@ -133,7 +133,7 @@ export default function EstimateBuilder({
 			</div>
 
 			{/* ---- sticky totals (spans BOTH lines — one shared checkout) ---- */}
-			<div className="sticky top-[44px] z-40 mb-4 border border-line bg-white shadow-sm">
+			<div className="sticky top-11 z-40 mb-4 border border-line bg-white shadow-sm">
 				<div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
 					<div className="flex flex-wrap gap-x-6 gap-y-2">
 						<Stat label="Items" value={String(totals.items)} />
@@ -227,15 +227,15 @@ export default function EstimateBuilder({
 							{c.name}
 						</h3>
 						<div className="overflow-x-auto border border-line">
-							<table className="w-full min-w-[760px] table-fixed border-collapse text-[16px]">
+							<table className="w-full min-w-190 table-fixed border-collapse text-[16px]">
 								{/* Fixed widths so every category table lines up identically. */}
 								<colgroup>
 									<col className="w-auto" />
-									<col className="w-[150px]" />
-									<col className="w-[110px]" />
-									<col className="w-[110px]" />
-									<col className="w-[96px]" />
-									<col className="w-[110px]" />
+									<col className="w-37.5" />
+									<col className="w-27.5" />
+									<col className="w-27.5" />
+									<col className="w-24" />
+									<col className="w-27.5" />
 								</colgroup>
 								<thead>
 									<tr className="bg-shell text-left text-[14px] uppercase tracking-wide text-ink-soft">
@@ -266,7 +266,7 @@ export default function EstimateBuilder({
 																className="h-10 w-10 flex-none rounded border border-line bg-white object-cover"
 															/>
 														) : (
-															<span className="grid h-10 w-10 flex-none place-items-center rounded border border-line bg-gradient-to-br from-[#fff7e6] to-[#fdeccb]">
+															<span className="grid h-10 w-10 flex-none place-items-center rounded border border-line bg-linear-to-br from-[#fff7e6] to-[#fdeccb]">
 																<CategoryIcon id={c.id} className="h-6 w-6 text-brand" />
 															</span>
 														)}
@@ -302,7 +302,7 @@ export default function EstimateBuilder({
 														value={soldOut ? "" : q === 0 ? "" : q}
 														placeholder={soldOut ? "—" : "0"}
 														onChange={(e) => setValue(p.id, e.target.value)}
-														className="w-[70px] border border-line px-2 py-1.5 text-center font-medium focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:bg-row"
+														className="w-17.5 border border-line px-2 py-1.5 text-center font-medium focus:border-brand focus:outline-none disabled:cursor-not-allowed disabled:bg-row"
 													/>
 												</td>
 												<td

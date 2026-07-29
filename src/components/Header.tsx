@@ -102,7 +102,7 @@ export default function Header({ site }: { site: PublicSite }) {
                     href={n.href}
                     className={`flex h-full items-center px-4 text-[16px] font-medium transition-colors ${
                       active
-                        ? "bg-white/[0.06] text-gold shadow-[inset_0_-3px_0_var(--color-yellow)]"
+                        ? "bg-white/6 text-gold shadow-[inset_0_-3px_0_var(--color-yellow)]"
                         : "text-white/80 hover:bg-white/10 hover:text-gold"
                     }`}
                   >
@@ -150,7 +150,7 @@ export default function Header({ site }: { site: PublicSite }) {
                   onClick={() => setOpen(false)}
                   className={`block border-b border-white/5 px-4 py-3 text-sm ${
                     pathname === n.href
-                      ? "bg-white/[0.06] font-semibold text-gold shadow-[inset_3px_0_0_var(--color-yellow)]"
+                      ? "bg-white/6 font-semibold text-gold shadow-[inset_3px_0_0_var(--color-yellow)]"
                       : "text-white/85"
                   }`}
                 >

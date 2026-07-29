@@ -66,7 +66,7 @@ export default function FeaturedCarousel({
 							aria-label={`${k + 1} of ${n}: ${c.name}`}
 						>
 							<div className="grid grid-cols-1 sm:grid-cols-[1fr_1.15fr]">
-								<div className="flex aspect-[16/10] items-center justify-center overflow-hidden bg-gradient-to-br from-[#fff7e6] to-[#fdeccb] sm:aspect-auto">
+								<div className="flex aspect-16/10 items-center justify-center overflow-hidden bg-linear-to-br from-[#fff7e6] to-[#fdeccb] sm:aspect-auto">
 									{c.image ? (
 										// The owner's own category photo (admin → Products → Manage categories).
 										// eslint-disable-next-line @next/next/no-img-element
