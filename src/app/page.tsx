@@ -97,7 +97,7 @@ export default async function Home() {
 				</div>
 
 				{/* lg:pl-20 keeps the left-aligned headline clear of the fixed action rail. */}
-				<div className="relative z-10 mx-auto max-w-[1280px] px-4 py-12 lg:py-16 lg:pl-20">
+				<div className="relative z-10 mx-auto max-w-7xl px-4 py-12 lg:py-16 lg:pl-20">
 					<div className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
 						{/* ---- LEFT: brand + headline discount ---- */}
 						<Reveal className="text-center lg:text-left">
@@ -147,7 +147,7 @@ export default async function Home() {
 									{site.discountTiers.map((t, i) => (
 										<div
 											key={t.min}
-											className="tier-row flex items-center justify-between rounded-lg border border-white/15 bg-gradient-to-r from-white/10 to-transparent px-3 py-2.5"
+											className="tier-row flex items-center justify-between rounded-lg border border-white/15 bg-linear-to-r from-white/10 to-transparent px-3 py-2.5"
 											style={{ animationDelay: `${i * 0.25}s` }}
 										>
 											<span className="text-[16px] font-semibold text-white">
@@ -167,7 +167,7 @@ export default async function Home() {
 								{/* ---- CENTER-BOTTOM: order button ---- */}
 								<Link
 									href="/products"
-									className="glow-btn shimmer mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-gold via-yellow to-[#eaa72a] py-3 text-sm font-extrabold text-[#3a1a00]"
+									className="glow-btn shimmer mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-gold via-yellow to-[#eaa72a] py-3 text-sm font-extrabold text-[#3a1a00]"
 								>
 									<SparkBurst className="h-4 w-4" /> ORDER NOW
 								</Link>
@@ -188,7 +188,7 @@ export default async function Home() {
 			{/* ---------- OWNER BANNERS (admin → Photos; the section hides itself when empty) ---------- */}
 			{banners.length > 0 && (
 				<section className="pt-10">
-					<div className="mx-auto max-w-[1170px] px-4">
+					<div className="mx-auto max-w-292.5 px-4">
 						<div className={`grid gap-4 ${banners.length > 1 ? "sm:grid-cols-2" : ""}`}>
 							{banners.map((b, i) => (
 								<figure key={b.id} className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
@@ -197,7 +197,7 @@ export default async function Home() {
 										src={b.url}
 										alt={b.caption || `${site.name} banner`}
 										loading={i === 0 ? "eager" : "lazy"}
-										className="h-full max-h-[380px] w-full object-cover"
+										className="h-full max-h-95 w-full object-cover"
 									/>
 									{b.caption && (
 										<figcaption className="px-4 py-2.5 text-center text-[15px] font-medium text-ink-soft">
@@ -213,7 +213,7 @@ export default async function Home() {
 
 			{/* ---------- FEATURED (auto-advancing carousel — one at a time) ---------- */}
 			<section className="py-12">
-				<div className="mx-auto max-w-[1000px] px-4">
+				<div className="mx-auto max-w-250 px-4">
 					<div className="mb-6 flex items-end justify-between gap-4">
 						<div>
 							<h2 className="text-2xl font-bold text-ink sm:text-3xl">Featured this season</h2>
@@ -234,7 +234,7 @@ export default async function Home() {
 			{/* ---------- PROMO GRID ---------- */}
 			<section className="pb-12">
 				<div className="mx-auto grid max-w-[1600px] md:grid-cols-2">
-					<div className="flex min-h-[220px] items-center justify-center bg-brand p-8 text-center text-white">
+					<div className="flex min-h-55 items-center justify-center bg-brand p-8 text-center text-white">
 						<div>
 							<p className="text-3xl font-bold sm:text-4xl">
 								FLAT {site.discountPct}% OFF
@@ -249,7 +249,7 @@ export default async function Home() {
 						</div>
 					</div>
 
-					<div className="flex min-h-[220px] items-center justify-center bg-shell p-8 text-center">
+					<div className="flex min-h-55 items-center justify-center bg-shell p-8 text-center">
 						<div>
 							<p className="text-2xl font-semibold text-brand sm:text-3xl">
 								Minimum order {money(site.minOrder)}
@@ -262,7 +262,7 @@ export default async function Home() {
 						</div>
 					</div>
 
-					<div className="flex min-h-[220px] items-center justify-center bg-shell p-8 text-center">
+					<div className="flex min-h-55 items-center justify-center bg-shell p-8 text-center">
 						<div>
 							<p className="flex items-center justify-center gap-2 text-xl font-semibold text-ink sm:text-2xl">
 								<TruckIcon className="h-6 w-6 text-brand" /> Free transport office delivery
@@ -271,14 +271,14 @@ export default async function Home() {
 								Available to all major cities in {site.serviceStates.join(", ")}.
 							</p>
 							<p className="mx-auto mt-2 max-w-md text-[15px] leading-5 text-muted">
-								Pick your order up from the nearest transport office. All-India delivery
-								to major cities — except Delhi-NCR and anywhere the sale of fireworks is
-								banned.
+							Pick up from the nearest transport office in South India. We serve major
+							cities in Tamil Nadu, Puducherry, Kerala, Karnataka, Andhra Pradesh and
+							Telangana.
 							</p>
 						</div>
 					</div>
 
-					<div className="flex min-h-[220px] items-center justify-center bg-brand-dark p-8 text-center text-white">
+					<div className="flex min-h-55 items-center justify-center bg-brand-dark p-8 text-center text-white">
 						<div>
 							<p className="flex items-center justify-center gap-2 text-2xl font-bold sm:text-3xl">
 								<MedalIcon className="h-7 w-7 text-yellow" /> Genuine Sivakasi Quality
@@ -306,7 +306,7 @@ export default async function Home() {
 			{/* Inline icon-left rows in an asymmetric 2-col band — not the
 			    icon-over-heading card grid. First row spans wide as a lead. */}
 			<section className="bg-brand py-14 text-white">
-				<div className="mx-auto max-w-[1170px] px-4">
+				<div className="mx-auto max-w-292.5 px-4">
 					<h2 className="max-w-xl text-2xl font-bold sm:text-3xl">
 						Why families across South India buy from us
 					</h2>
@@ -330,7 +330,7 @@ export default async function Home() {
 			{/* ---------- DISCOUNT BAND ---------- */}
 			<section className="night-bg relative overflow-hidden py-14 text-center text-white">
 				<Fireworks />
-				<div className="relative z-10 mx-auto max-w-[1170px] px-4">
+				<div className="relative z-10 mx-auto max-w-292.5 px-4">
 					<h2 className="gold-ink text-2xl font-extrabold sm:text-4xl">
 						{site.discountPct}% DISCOUNT ON ALL PRODUCTS
 					</h2>
@@ -353,7 +353,7 @@ export default async function Home() {
 
 			{/* ---------- OCCASIONS ---------- */}
 			<section className="bg-shell py-12">
-				<div className="mx-auto max-w-[1170px] px-4 text-center">
+				<div className="mx-auto max-w-292.5 px-4 text-center">
 					<h2 className="section-title">Every Celebration, Covered</h2>
 					<div className="gold-rule" />
 					<p className="mx-auto mt-3 max-w-3xl text-[16px] leading-6 text-ink-soft">
@@ -381,10 +381,10 @@ export default async function Home() {
 
 			{/* ---------- LEGAL ---------- */}
 			<section className="py-10">
-				<div className="mx-auto max-w-[1170px] px-4">
+				<div className="mx-auto max-w-292.5 px-4">
 					<div className="rounded-lg border border-line bg-row p-5 text-[15.5px] leading-6 text-ink-soft">
 						<p className="mb-1 flex items-center gap-2 font-semibold text-ink">
-							<span className="h-3 w-3 flex-none rounded-[2px] bg-brand" aria-hidden />
+							<span className="h-3 w-3 flex-none rounded-xs bg-brand" aria-hidden />
 							How ordering works — please read.
 						</p>
 						Sale and use of firecrackers in India is regulated by orders of the

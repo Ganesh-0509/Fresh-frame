@@ -28,7 +28,7 @@ export default function Header({ site }: { site: PublicSite }) {
       <header>
       {/* ---- utility bar ---- */}
       <div className="top-bar text-white/90 text-[14px]">
-        <div className="mx-auto flex max-w-[1170px] flex-wrap items-center justify-between gap-2 px-4 py-1.5">
+        <div className="mx-auto flex max-w-292.5 flex-wrap items-center justify-between gap-2 px-4 py-1.5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <a href={telLinkTo(site.phone)} className="inline-flex items-center gap-1.5 hover:text-yellow">
               <PhoneIcon className="h-3.5 w-3.5" /> {site.phone}
@@ -51,7 +51,7 @@ export default function Header({ site }: { site: PublicSite }) {
 
       {/* ---- brand bar ---- */}
       <div className="brand-bar">
-        <div className="relative mx-auto flex max-w-[1170px] items-center gap-3 px-4 py-3">
+        <div className="relative mx-auto flex max-w-292.5 items-center gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-3">
             {/* Real Standard Fireworks wordmark — floated on a soft gold halo
                 (no white box; the old chip looked cheap). */}
@@ -91,7 +91,7 @@ export default function Header({ site }: { site: PublicSite }) {
           bar on /products offsets against it, and a nav that changes height
           between desktop and mobile silently buries that bar. */}
       <nav className="nav-bar sticky top-0 z-50 shadow-sm">
-        <div className="mx-auto flex h-11 max-w-[1170px] items-center justify-between px-4">
+        <div className="mx-auto flex h-11 max-w-292.5 items-center justify-between px-4">
           {/* left: links (desktop) / hamburger (mobile) */}
           <ul className="hidden h-full md:flex">
             {NAV.map((n) => {

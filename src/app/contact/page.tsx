@@ -85,7 +85,7 @@ export default async function ContactPage() {
 			/>
 
 			<section className="py-12">
-				<div className="mx-auto grid max-w-[1170px] gap-8 px-4 lg:grid-cols-2">
+				<div className="mx-auto grid max-w-292.5 gap-8 px-4 lg:grid-cols-2">
 					{/* ---- details ---- */}
 					<div className="space-y-6">
 						<div className="border border-line bg-white p-6">
@@ -160,7 +160,7 @@ export default async function ContactPage() {
 						<EnquiryForm whatsapp={site.whatsapp} phone={site.phone} brand={site.name} />
 						<div className="rounded-lg border border-line bg-row p-4 text-[15.5px] leading-7 text-ink-soft">
 							<strong className="mb-1 flex items-center gap-2 text-ink">
-								<span className="h-3 w-3 flex-none rounded-[2px] bg-brand" aria-hidden />
+								<span className="h-3 w-3 flex-none rounded-xs bg-brand" aria-hidden />
 								No online sale.
 							</strong>{" "}
 							This form sends a WhatsApp message — it does not place an order or take

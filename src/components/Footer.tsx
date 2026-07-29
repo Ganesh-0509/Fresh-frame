@@ -12,7 +12,7 @@ export default function Footer({ site }: { site: PublicSite }) {
     <footer>
       {/* ---- payment / bank band ---- */}
       <div className="bg-brand-dark text-white">
-        <div className="mx-auto max-w-[1170px] px-4 py-10">
+        <div className="mx-auto max-w-7xl px-4 py-10">
           <h3 className="mb-5 border-b border-white/25 pb-2 text-lg font-semibold">
             Bank Details For Payment
           </h3>
@@ -23,9 +23,6 @@ export default function Footer({ site }: { site: PublicSite }) {
               <p>{site.bank.branch}</p>
               <p>A/c: {site.bank.account}</p>
               <p>IFSC: {site.bank.ifsc}</p>
-              <p className="mt-3 text-[15px] text-yellow">
-                Payment is arranged after we confirm your order by phone.
-              </p>
             </div>
             <div>
               <p className="mb-2 text-[16px] font-semibold">Pay Online</p>
@@ -62,7 +59,7 @@ export default function Footer({ site }: { site: PublicSite }) {
 
       {/* ---- mast-headed close (not a 4-column link farm) ---- */}
       <div className="bg-brand text-white">
-        <div className="mx-auto max-w-[1170px] px-4 py-12">
+        <div className="mx-auto max-w-7xl px-4 py-12">
           <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
             {/* left: name + one-line + call */}
             <div className="max-w-md">
@@ -126,7 +123,7 @@ export default function Footer({ site }: { site: PublicSite }) {
 
       {/* ---- legal ---- */}
       <div className="bg-[#1c1c1c] text-white/70">
-        <div className="mx-auto max-w-[1170px] px-4 py-5 text-[14px] leading-5">
+        <div className="mx-auto max-w-7xl px-4 py-5 text-[14px] leading-5">
           <p className="mb-2">
             <strong className="text-white/90">Please note:</strong> Sale and use of
             firecrackers in India is regulated by orders of the Hon&apos;ble Supreme Court

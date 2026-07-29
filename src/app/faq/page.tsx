@@ -310,7 +310,7 @@ export default async function FaqPage() {
 			<section className="py-14">
 				{/* Full-width — the six groups flow across two columns (masonry) so
 				    the page width is used, while each answer stays a readable width. */}
-				<div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8">
+				<div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
 					<div className="lg:columns-2 lg:gap-8">
 						{GROUPS.map((g) => (
 							<div key={g.heading} className="mb-8 break-inside-avoid lg:inline-block lg:w-full">
@@ -342,7 +342,7 @@ export default async function FaqPage() {
 
 					<div className="mt-4 rounded-lg border border-line bg-row p-5 text-[15.5px] leading-7 text-ink-soft">
 						<strong className="mb-1 flex items-center gap-2 text-ink">
-							<span className="h-3 w-3 flex-none rounded-[2px] bg-brand" aria-hidden />
+							<span className="h-3 w-3 flex-none rounded-xs bg-brand" aria-hidden />
 							The legal bit.
 						</strong>{" "}
 						Sale and use of

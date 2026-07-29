@@ -75,7 +75,7 @@ export default async function AboutPage() {
 			/>
 
 			<section className="py-12">
-				<div className="mx-auto grid max-w-[1170px] items-center gap-10 px-4 md:grid-cols-2">
+				<div className="mx-auto grid max-w-292.5 items-center gap-10 px-4 md:grid-cols-2">
 					{lead ? (
 						<figure>
 							{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,7 +123,7 @@ export default async function AboutPage() {
 			{/* Owner's other shop photos (admin → Photos). Hidden until there are some. */}
 			{rest.length > 0 && (
 				<section className="pb-12">
-					<div className="mx-auto max-w-[1170px] px-4">
+					<div className="mx-auto max-w-292.5 px-4">
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							{rest.map((ph) => (
 								<figure key={ph.id}>
@@ -148,7 +148,7 @@ export default async function AboutPage() {
 
 			{/* Inline icon-left rows, left-aligned heading — not the icon-over-heading card grid. */}
 			<section className="bg-shell py-14">
-				<div className="mx-auto max-w-[1170px] px-4">
+				<div className="mx-auto max-w-292.5 px-4">
 					<h2 className="text-2xl font-bold text-ink sm:text-3xl">What we stand on</h2>
 					<p className="mt-1 text-[16px] text-muted">Four things we don&apos;t compromise.</p>
 					<div className="mt-9 grid gap-x-12 gap-y-8 sm:grid-cols-2">
@@ -166,7 +166,7 @@ export default async function AboutPage() {
 			</section>
 
 			<section className="py-14">
-				<div className="mx-auto max-w-[1170px] px-4">
+				<div className="mx-auto max-w-292.5 px-4">
 					<h2 className="text-2xl font-bold text-ink sm:text-3xl">Please burst responsibly</h2>
 					<p className="mt-1 max-w-2xl text-[16px] text-muted">
 						Crackers are explosives. Every year people are hurt by things that were
@@ -187,7 +187,7 @@ export default async function AboutPage() {
 			</section>
 
 			<section className="bg-brand py-12 text-center text-white">
-				<div className="mx-auto max-w-[1170px] px-4">
+				<div className="mx-auto max-w-292.5 px-4">
 					<h2 className="text-2xl font-bold sm:text-3xl">Ready to book?</h2>
 					<p className="mx-auto mt-3 max-w-xl text-[16px] text-white/85">
 						Build your list from our price list and send it over. We&apos;ll call you

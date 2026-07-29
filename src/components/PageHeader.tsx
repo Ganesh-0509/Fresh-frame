@@ -26,7 +26,7 @@ export default function PageHeader({
 					</span>
 				))}
 			</div>
-			<div className="relative z-10 mx-auto max-w-[1170px] px-4">
+			<div className="relative z-10 mx-auto max-w-292.5 px-4">
 				<h1 className="gold-ink underline-spark text-3xl font-black sm:text-5xl">{title}</h1>
 				{subtitle && (
 					<p className="mt-5 max-w-2xl text-[17px] leading-7 text-white/85">{subtitle}</p>
