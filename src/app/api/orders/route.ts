@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, orders, newOrderId } from "@/lib/db";
-import { sendEmail, ownerEmail, ownerOrderEmail } from "@/lib/email";
+import { sendEmail, ownerEmail, ownerOrderEmail, statusEmail } from "@/lib/email";
 import { cleanMapUrl, gstAmount, bestTier, tierDiscount } from "@/lib/site";
 import { getSettings } from "@/lib/catalog";
 import { checkCoupon } from "@/lib/coupons";
@@ -136,6 +136,8 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: "Could not save order" }, { status: 500 });
 	}
 
+	const custEmail = str(body.email);
+
 	// Notify the owner by email (no-op until Resend is configured). Never fails the order.
 	try {
 		const { subject, text } = ownerOrderEmail(
@@ -158,10 +160,24 @@ export async function POST(req: NextRequest) {
 			},
 			"new",
 		);
-		const custEmail = str(body.email);
 		await sendEmail({ to: ownerEmail(), subject, text, replyTo: custEmail || undefined });
 	} catch (e) {
 		console.error("owner notify failed", e);
+	}
+
+	// Confirm the order to the CUSTOMER too — this used to only happen if the
+	// owner later opened the order in admin and changed its status by hand, so
+	// most customers never got anything until the owner manually emailed them.
+	if (custEmail) {
+		try {
+			const { subject, text } = statusEmail(
+				{ id, customerName: name, status: "pending_payment", area: area || null, city, areaMap: areaMap || null },
+				settings?.emailTemplates,
+			);
+			await sendEmail({ to: custEmail, subject, text, replyTo: ownerEmail() });
+		} catch (e) {
+			console.error("customer notify failed", e);
+		}
 	}
 
 	return NextResponse.json({ id });

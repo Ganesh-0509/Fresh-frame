@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSettings, saveSettings } from "@/lib/catalog";
 import { emailConfigured, ownerEmail, sendEmail } from "@/lib/email";
-import { SITE, areaKey, cleanMapUrl, type ServiceArea } from "@/lib/site";
+import { SITE, areaKey, cleanMapUrl, type ServiceArea, type EmailTemplate } from "@/lib/site";
+import { parseDeliveryCsv, parseDeliveryWorkbook, mergeDeliveryImport } from "@/lib/delivery-csv";
+import { ORDER_STATUSES, type OrderStatus } from "@/lib/db";
 
 /** Owner clicks "Send test email" — proves the email integration works. */
 export async function sendTestEmailAction() {
@@ -23,6 +25,34 @@ export async function sendTestEmailAction() {
 			"updates will send automatically.\n\n— Sent from Admin → Settings",
 	});
 	redirect(`/admin/settings?test=${ok ? "ok" : "fail"}`);
+}
+
+/**
+ * Owner uploads their transport-agent Excel sheet (.xlsx/.xls) as-is, or a CSV
+ * (hand-built or the "Download current list" export they edited), to add/update
+ * states, cities and areas in bulk. Additive on top of whatever is already
+ * saved — see mergeDeliveryImport(). Column names are matched by alias, so no
+ * reformatting is needed — see the header comment in lib/delivery-csv.ts.
+ */
+export async function importDeliveryFileAction(formData: FormData) {
+	await requireAdmin();
+	const file = formData.get("deliveryFile");
+	if (!(file instanceof File) || file.size === 0) {
+		redirect("/admin/settings?import=empty#delivery");
+	}
+	const name = (file as File).name.toLowerCase();
+	const rows = name.endsWith(".xlsx") || name.endsWith(".xls")
+		? parseDeliveryWorkbook(await (file as File).arrayBuffer())
+		: parseDeliveryCsv(await (file as File).text());
+	if (!rows.length) {
+		redirect("/admin/settings?import=badfile#delivery");
+	}
+	const cur = await getSettings();
+	const merged = mergeDeliveryImport(cur, rows);
+	await saveSettings({ ...cur, ...merged });
+	revalidatePath("/checkout");
+	revalidatePath("/admin/settings");
+	redirect(`/admin/settings?import=${rows.length}#delivery`);
 }
 
 export async function saveSettingsAction(formData: FormData) {
@@ -100,6 +130,16 @@ export async function saveSettingsAction(formData: FormData) {
 		}
 	}
 
+	// Customer email wording — a subject + a message per order status
+	// (emailTplSubject::<status> / emailTpl::<status>). Either left blank →
+	// falls back to the built-in default for that one, independently.
+	const emailTemplates: Partial<Record<OrderStatus, EmailTemplate>> = {};
+	for (const st of ORDER_STATUSES) {
+		const subject = s(`emailTplSubject::${st}`, cur.emailTemplates[st]?.subject ?? "");
+		const body = s(`emailTpl::${st}`, cur.emailTemplates[st]?.body ?? "");
+		if (subject || body) emailTemplates[st] = { subject: subject || undefined, body: body || undefined };
+	}
+
 	await saveSettings({
 		phone: s("phone", cur.phone),
 		whatsapp: s("whatsapp", cur.whatsapp).replace(/\D/g, ""),
@@ -123,6 +163,8 @@ export async function saveSettingsAction(formData: FormData) {
 		metaDescription: s("metaDescription", cur.metaDescription),
 		logo: s("logo", cur.logo),
 		announcement: s("announcement", cur.announcement),
+		festivalName: s("festivalName", cur.festivalName),
+		festivalDate: s("festivalDate", cur.festivalDate),
 
 		// content / identity
 		tagline: s("tagline", cur.tagline),
@@ -137,6 +179,7 @@ export async function saveSettingsAction(formData: FormData) {
 		facebook: s("facebook", cur.facebook),
 		instagram: s("instagram", cur.instagram),
 		youtube: s("youtube", cur.youtube),
+		emailTemplates,
 	});
 	revalidatePath("/", "layout"); // header/footer live on every page
 	revalidatePath("/");

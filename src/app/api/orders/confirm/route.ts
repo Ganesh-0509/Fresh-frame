@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb, orders } from "@/lib/db";
-import { sendEmail, ownerEmail, ownerOrderEmail } from "@/lib/email";
+import { sendEmail, ownerEmail, ownerOrderEmail, statusEmail } from "@/lib/email";
 import { isSafeImageDataUrl } from "@/lib/site";
+import { getSettings } from "@/lib/catalog";
 
 export const runtime = "nodejs";
 
@@ -65,6 +66,23 @@ export async function POST(req: NextRequest) {
 		}
 	} catch (e) {
 		console.error("owner notify failed", e);
+	}
+
+	// Confirm receipt to the CUSTOMER too — this is the step that used to go
+	// silent: the order flips to pending_verification automatically the moment
+	// the customer submits payment, with no owner action involved, so nobody
+	// was ever emailed unless the owner separately opened the order in admin.
+	if (row?.email) {
+		try {
+			const settings = await getSettings().catch(() => null);
+			const { subject, text } = statusEmail(
+				{ id, customerName: row.customerName, status: "pending_verification", area: row.area, city: row.city, areaMap: row.areaMap },
+				settings?.emailTemplates,
+			);
+			await sendEmail({ to: row.email, subject, text, replyTo: ownerEmail() });
+		} catch (e) {
+			console.error("customer notify failed", e);
+		}
 	}
 
 	return NextResponse.json({ ok: true });

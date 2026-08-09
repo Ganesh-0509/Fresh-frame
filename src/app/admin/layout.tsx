@@ -30,7 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	const authed = await isAuthed();
 	return (
 		<div className="min-h-screen bg-[#faf6ef] text-ink">
-			<header className="border-b border-line bg-white shadow-sm">
+			<header className="print:hidden border-b border-line bg-white shadow-sm">
 				<div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3 px-4 py-3">
 					<Link href="/admin" className="flex items-center gap-2.5 text-[17px] font-extrabold text-ink">
 						<span className="grid h-9 w-9 place-items-center rounded-lg bg-brand text-white">
@@ -59,7 +59,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 					)}
 				</div>
 			</header>
-			<main className="mx-auto max-w-[1100px] px-4 py-8">{children}</main>
+			<main className="mx-auto max-w-[1100px] px-4 py-8 print:max-w-none print:p-0">{children}</main>
 		</div>
 	);
 }

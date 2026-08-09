@@ -14,7 +14,7 @@
  */
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { SITE } from "@/lib/site";
+import { SITE, fillTemplate, type EmailTemplate } from "@/lib/site";
 import { STATUS_LABEL, type OrderRow, type OrderStatus } from "@/lib/db";
 
 function env() {
@@ -41,12 +41,40 @@ export function customerMailLink(to: string, subject: string, body: string): str
 	return `mailto:${encodeURIComponent(to)}?${q}`;
 }
 
-/** Friendly, per-status update for a customer. */
-export function statusEmail(order: OrderRow): { subject: string; text: string } {
+/**
+ * Friendly, per-status update for a customer. `templates` is the owner's own
+ * wording (Admin → Settings → "Customer email wording") — when the current
+ * status has a subject/body set, it wins over the built-in default below, with
+ * `{token}` placeholders filled in first. Blank/missing → built-in default.
+ */
+export function statusEmail(
+	order: Pick<OrderRow, "id" | "customerName" | "status" | "area" | "city" | "areaMap">,
+	templates: Partial<Record<OrderStatus, EmailTemplate>> = {},
+): { subject: string; text: string } {
 	const name = order.customerName.split(" ")[0] || "there";
 	const from = `— ${SITE.name}`;
 	const s = order.status as OrderStatus;
-	const subject = `${SITE.name} · Order ${order.id} — ${STATUS_LABEL[s]}`;
+	const vars = {
+		name,
+		orderId: order.id,
+		area: order.area || "",
+		city: order.city || "",
+		areaMap: order.areaMap || "",
+		shopName: SITE.name,
+		statusLabel: STATUS_LABEL[s],
+	};
+
+	const tpl = templates[s];
+	const subject = tpl?.subject?.trim()
+		? fillTemplate(tpl.subject, vars)
+		: `${SITE.name} · Order ${order.id} — ${STATUS_LABEL[s]}`;
+
+	const customBody = tpl?.body?.trim();
+	if (customBody) {
+		const line = fillTemplate(customBody, vars);
+		return { subject, text: `Hi ${name}, ${line}\n\n${from}` };
+	}
+
 	let line: string;
 	switch (s) {
 		case "verified":

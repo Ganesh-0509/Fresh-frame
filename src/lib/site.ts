@@ -7,6 +7,8 @@
  * Any value still unconfirmed by the client is listed in PLACEHOLDER-DATA.md.
  */
 
+import type { OrderStatus } from "@/lib/db";
+
 export const SITE = {
   name: "Standard Fireworks",
   shortName: "STANDARD FIREWORKS",
@@ -102,6 +104,73 @@ export const sellPrice = (listPrice: number) =>
  */
 export type DiscountTier = { min: number; extra: number; label: string };
 
+/** Replaces `{token}` placeholders with plain text — unknown tokens become "". Client-safe (no server deps), so both the settings page's live preview and lib/email.ts share this one implementation. */
+export function fillTemplate(template: string, vars: Record<string, string>): string {
+	return template.replace(/\{(\w+)\}/g, (_, key: string) => vars[key] ?? "");
+}
+
+/** Tokens the owner can use inside a custom subject or message — see fillTemplate() above. */
+export const EMAIL_TEMPLATE_TOKENS = [
+	{ token: "{name}", meaning: "Customer's first name" },
+	{ token: "{orderId}", meaning: "Order number, e.g. FW202612345" },
+	{ token: "{area}", meaning: "Delivery area (blank if none was picked)" },
+	{ token: "{city}", meaning: "Delivery city" },
+	{ token: "{areaMap}", meaning: "Google Maps link for the delivery point (blank if none)" },
+	{ token: "{shopName}", meaning: "Your shop's name" },
+	{ token: "{statusLabel}", meaning: "The status in plain words, e.g. \"Dispatched\"" },
+] as const;
+
+export type EmailTemplate = { subject?: string; body?: string };
+
+/**
+ * What each status currently emails, shown as placeholder text (not a saved
+ * value) in Admin → Settings → "Customer email wording" — so the owner can see
+ * what's already going out before deciding whether to change it. Mirrors the
+ * built-in defaults in lib/email.ts statusEmail(); update both together.
+ */
+export const EMAIL_TEMPLATE_DEFAULTS: Partial<Record<OrderStatus, Required<EmailTemplate>>> = {
+	pending_payment: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "we've received your order {orderId}. Please complete the payment and share the receipt so we can confirm it.",
+	},
+	pending_verification: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "we've received your order {orderId}. Please complete the payment and share the receipt so we can confirm it.",
+	},
+	verified: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "your payment for order {orderId} is verified. Your order is confirmed and we'll start preparing it.",
+	},
+	confirmed: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "your order {orderId} is confirmed. We'll update you as we pack and dispatch it.",
+	},
+	packing: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "your order {orderId} is being packed.",
+	},
+	ready: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "your order {orderId} is packed and ready to dispatch.",
+	},
+	dispatched: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "good news — order {orderId} has been dispatched. Collect it from the {area} delivery point ({city}). Location on Google Maps: {areaMap}",
+	},
+	delivered: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "hope you received order {orderId} safely. Have a safe and happy Deepavali!",
+	},
+	rejected: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "we couldn't verify the payment for order {orderId}. Please reply with your payment details and we'll help.",
+	},
+	cancelled: {
+		subject: "{shopName} · Order {orderId} — {statusLabel}",
+		body: "your order {orderId} has been cancelled. Reply if you have any questions.",
+	},
+};
+
 /**
  * Level 3 of the delivery hierarchy: State → City → Area.
  * An area is the actual delivery/collection point inside a city (e.g. "Anna Nagar"
@@ -177,6 +246,11 @@ export type Settings = {
   logo: string;
   // Scrolling announcement bar under the hero (season/offer message).
   announcement: string;
+  // Live countdown shown inside that same scrolling bar. "" date → hidden.
+  // The owner updates this every season (the festival date moves every year
+  // on the lunar calendar) — Admin → Settings → Announcement banner.
+  festivalName: string;
+  festivalDate: string; // "YYYY-MM-DD"
 
   // ---- Business identity / content (all owner-editable) ----
   tagline: string;
@@ -193,6 +267,10 @@ export type Settings = {
   facebook: string;
   instagram: string;
   youtube: string;
+  // Owner's own wording for the automatic customer status-update email, per
+  // order status. Missing/blank status → the built-in default message is used.
+  // See EMAIL_TEMPLATE_TOKENS for what can go inside one.
+  emailTemplates: Partial<Record<OrderStatus, EmailTemplate>>;
 };
 
 // ⚠️ Placeholder transport fees + cities — the client sets the real ones in /admin/settings.
@@ -241,6 +319,10 @@ export const DEFAULT_SETTINGS: Settings = {
   logo: "",
   announcement:
     "BOOKING OPEN FOR DEEPAVALI 2026 · BOOK EARLY FOR BEST STOCK · FREE TRANSPORT-OFFICE DELIVERY ACROSS SOUTH INDIA",
+  // Deepavali 2026 (Lakshmi Puja) is Sunday, 8 November 2026 — confirmed against
+  // multiple calendar sources. The owner can change this from Admin next season.
+  festivalName: "Deepavali",
+  festivalDate: "2026-11-08",
 
   tagline: SITE.tagline,
   hours: SITE.hours,
@@ -257,6 +339,7 @@ export const DEFAULT_SETTINGS: Settings = {
   facebook: SITE.facebook,
   instagram: SITE.instagram,
   youtube: SITE.youtube,
+  emailTemplates: {},
 };
 
 /**
@@ -300,6 +383,8 @@ export function publicSite(s: Settings, logoUrl = "") {
     youtube: s.youtube,
     aboutStory: s.aboutStory,
     announcement: s.announcement,
+    festivalName: s.festivalName,
+    festivalDate: s.festivalDate,
   };
 }
 export type PublicSite = ReturnType<typeof publicSite>;

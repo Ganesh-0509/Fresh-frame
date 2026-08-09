@@ -2,8 +2,10 @@ import { requireAdmin, hasOwnPassword, MIN_PASSWORD_LENGTH } from "@/lib/admin-a
 import { changePasswordAction } from "./password-actions";
 import { getSettings } from "@/lib/catalog";
 import { emailConfigured, ownerEmail } from "@/lib/email";
-import { areaKey } from "@/lib/site";
-import { saveSettingsAction, sendTestEmailAction } from "./actions";
+import { areaKey, EMAIL_TEMPLATE_TOKENS, EMAIL_TEMPLATE_DEFAULTS } from "@/lib/site";
+import { ORDER_STATUSES, STATUS_LABEL } from "@/lib/db";
+import EmailTemplateRow from "./EmailTemplateRow";
+import { saveSettingsAction, sendTestEmailAction, importDeliveryFileAction } from "./actions";
 import ImageInput from "./ImageInput";
 import AreaRows from "./AreaRows";
 import { aCard, aCardTitle, aCardSub, aLabel, aHint, aInput, aBtn, aBtnGhost, aPageTitle, aSuccess } from "@/lib/admin-ui";
@@ -13,13 +15,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettings({
 	searchParams,
 }: {
-	searchParams: Promise<{ saved?: string; test?: string; pw?: string }>;
+	searchParams: Promise<{ saved?: string; test?: string; pw?: string; import?: string }>;
 }) {
 	await requireAdmin();
 	const s = await getSettings();
 	const mail = emailConfigured();
 	const inbox = ownerEmail();
-	const { saved, test, pw } = await searchParams;
+	const { saved, test, pw, import: imported } = await searchParams;
 	const ownPassword = await hasOwnPassword();
 
 	return (
@@ -117,6 +119,74 @@ export default async function AdminSettings({
 				</form>
 			</div>
 
+			{/* ---- Bulk import delivery areas ----
+			    Its own <form> — deliberately OUTSIDE the big Save-changes form below.
+			    HTML doesn't allow a <form> nested inside another <form>. */}
+			<div id="delivery" className={`mb-6 ${aCard}`}>
+				<h2 className={aCardTitle}>📥 Bulk import delivery areas (Excel/CSV)</h2>
+				<p className={aCardSub}>
+					Got a transport-agent sheet (Excel) with your delivery points already on it?
+					Upload it here <b className="text-ink-soft">as-is — no reformatting needed.</b>{" "}
+					We recognise columns named <b className="text-ink-soft">State</b>,{" "}
+					<b className="text-ink-soft">City</b> (or Location),{" "}
+					<b className="text-ink-soft">Address</b> (or Area) and{" "}
+					<b className="text-ink-soft">Google Map Link</b> — any others (S.No, Country,
+					Postcode, Status…) are just ignored. A plain CSV works too. Uploading again later
+					only <b className="text-ink-soft">adds/updates</b> — it never deletes an area
+					someone already typed in by hand.
+				</p>
+
+				{imported === "empty" && (
+					<p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13.5px] text-red-700">
+						Choose a file first.
+					</p>
+				)}
+				{imported === "badfile" && (
+					<p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13.5px] text-red-700">
+						Couldn&apos;t find a usable <b>State</b> column in that file — check the first
+						row has proper column headings.
+					</p>
+				)}
+				{imported && /^\d+$/.test(imported) && (
+					<p className="mb-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[13.5px] text-emerald-800">
+						✓ Imported {imported} row{imported === "1" ? "" : "s"} — already saved and live.
+						Check the Delivery card further down the page.
+					</p>
+				)}
+
+				<div className="flex flex-wrap items-center gap-2">
+					<a
+						href="/api/admin/delivery-csv"
+						className="rounded-lg border border-line bg-white px-3 py-2 text-[14px] font-semibold text-ink hover:bg-row"
+					>
+						⬇️ Download current list as CSV
+					</a>
+				</div>
+
+				<form
+					action={importDeliveryFileAction}
+					encType="multipart/form-data"
+					className="mt-3 flex flex-wrap items-center gap-2"
+				>
+					<input
+						type="file"
+						name="deliveryFile"
+						accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+						required
+						className="text-[14px] text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:text-[14px] file:font-semibold file:text-white hover:file:brightness-110"
+					/>
+					<button className="rounded-lg bg-brand px-4 py-2.5 text-[14px] font-semibold text-white hover:brightness-110">
+						Import file
+					</button>
+				</form>
+				<p className={aHint}>
+					Upload your existing Excel sheet (.xlsx/.xls) or a CSV. One row per delivery
+					point/area. A row with a City but no Address/Area still adds the city (with no
+					areas yet). A Delivery Fee column is optional — only needs to be on one row per
+					state (the last one wins) — leave it out entirely if you set fees by hand below.
+				</p>
+			</div>
+
 			<form action={saveSettingsAction} className="space-y-6">
 				<Card icon="💰" title="Payment details" sub="How customers pay you after you confirm their order.">
 					<Field name="upi" label="Your UPI ID" def={s.upi} hint="Customers pay here on Google Pay / PhonePe / Paytm. Example: yourname@okhdfc" />
@@ -136,6 +206,48 @@ export default async function AdminSettings({
 					<Field name="whatsapp" label="WhatsApp number" def={s.whatsapp} hint="Digits only with country code, e.g. 919344170018." />
 					<Field name="email" label="Email address" def={s.email} />
 				</Card>
+
+				<section className={aCard}>
+					<h2 className={aCardTitle}>✍️ Customer email wording</h2>
+					<p className={aCardSub}>
+						Write the subject and message a customer gets when you change their order&apos;s
+						status — in your own words. Leave either box empty to keep sending the
+						ready-made one shown greyed-out inside it. Each has a live example underneath
+						so you can read exactly what the customer would see. The greeting
+						(&ldquo;Hi [name],&rdquo;) and your shop&apos;s sign-off are added automatically
+						to the message.
+					</p>
+					<p className="mb-4 rounded-lg border border-line bg-row px-3 py-2.5 text-[13.5px] text-ink-soft">
+						You can use these anywhere in a subject or message and they&apos;ll be swapped
+						for the real value:{" "}
+						{EMAIL_TEMPLATE_TOKENS.map((t, i) => (
+							<span key={t.token}>
+								<code className="rounded bg-white px-1.5 py-0.5 font-mono text-[13px] text-brand">
+									{t.token}
+								</code>{" "}
+								<span className="text-muted">({t.meaning})</span>
+								{i < EMAIL_TEMPLATE_TOKENS.length - 1 ? " · " : ""}
+							</span>
+						))}
+					</p>
+					<div className="grid gap-3 sm:grid-cols-2">
+						{ORDER_STATUSES.map((st) => {
+							const def = EMAIL_TEMPLATE_DEFAULTS[st];
+							const cur = s.emailTemplates[st];
+							return (
+								<EmailTemplateRow
+									key={st}
+									status={st}
+									label={STATUS_LABEL[st]}
+									defaultSubject={def?.subject ?? ""}
+									defaultBody={def?.body ?? ""}
+									initialSubject={cur?.subject ?? ""}
+									initialBody={cur?.body ?? ""}
+								/>
+							);
+						})}
+					</div>
+				</section>
 
 				<Card icon="💵" title="Prices & delivery" sub="The basic rules for orders.">
 					<Field name="minOrder" label="Smallest order you accept (₹)" def={String(s.minOrder)} type="number" hint="Customers can't order for less than this." />
@@ -172,6 +284,10 @@ export default async function AdminSettings({
 						<p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] text-amber-800">
 							New city? Type it in the city box, press <b>Save changes</b>, then come back — its
 							area boxes will appear underneath.
+						</p>
+						<p className="text-[13.5px] text-muted">
+							Got a lot of areas to add at once? Use <b>📥 Bulk import from Excel</b> near the top
+							of this page instead of typing them all in below.
 						</p>
 						{s.serviceStates.map((st) => (
 							<div key={st} className="rounded-xl border border-line bg-row p-3.5">
@@ -291,6 +407,14 @@ export default async function AdminSettings({
 					<div className="sm:col-span-2">
 						<Field name="announcement" label="Announcement message" def={s.announcement} hint="e.g. your current offer or season." />
 					</div>
+					<Field name="festivalName" label="Festival name for the countdown" def={s.festivalName} hint="Shown as '...to Deepavali'. Leave blank to hide the countdown entirely." />
+					<Field
+						name="festivalDate"
+						label="Festival date"
+						def={s.festivalDate}
+						type="date"
+						hint="The countdown in the scrolling banner ticks down to this date, live. Update it every season — festival dates move every year."
+					/>
 				</Card>
 
 				<Card icon="🔗" title="Social media links" sub="Leave blank to hide that icon.">

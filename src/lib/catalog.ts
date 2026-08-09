@@ -274,6 +274,30 @@ export async function deleteProduct(id: string): Promise<void> {
 	await db().delete(products).where(eq(products.id, id));
 }
 
+/**
+ * Persist a drag-and-drop reorder: `orderedIds` is every product currently
+ * shown in that category, in the exact order the owner dropped them in.
+ * Re-numbers `sort` as 0..N-1 to match — this also self-heals categories
+ * where several products still share the old flat default of 9999. IDs not
+ * belonging to `categoryId` are ignored (defensive — the UI never sends
+ * these, but a product moved from under the browser between load and drop
+ * shouldn't get reordered into a category it no longer belongs to).
+ */
+export async function reorderProducts(categoryId: string, orderedIds: string[]): Promise<void> {
+	const d = db();
+	const rows = await d
+		.select({ id: products.id, categoryId: products.categoryId })
+		.from(products)
+		.where(eq(products.categoryId, categoryId));
+	const valid = new Set(rows.map((r) => r.id));
+	let k = 0;
+	for (const id of orderedIds) {
+		if (!valid.has(id)) continue;
+		await d.update(products).set({ sort: k }).where(eq(products.id, id));
+		k++;
+	}
+}
+
 /* ---- product photos ----
  * Stored as compressed data URLs in D1 (same approach as the logo/QR). They are read
  * one at a time by the image route, never in bulk, so they cost nothing on page loads.
@@ -481,8 +505,13 @@ export async function createProduct(p: {
 	mrp: number;
 	price: number;
 }): Promise<void> {
+	const d = db();
 	const id = `${p.categoryId}-${crypto.randomUUID().slice(0, 6)}`;
-	await db().insert(products).values({
+	// Land after whatever already has the highest sort, so a freshly-added product
+	// appears last (not tied with every other product ever added the same way).
+	const rows = await d.select({ sort: products.sort }).from(products);
+	const sort = rows.reduce((max, r) => Math.max(max, r.sort), 0) + 1;
+	await d.insert(products).values({
 		id,
 		categoryId: p.categoryId,
 		line: p.line,
@@ -492,6 +521,6 @@ export async function createProduct(p: {
 		price: p.price,
 		active: 1,
 		stock: -1,
-		sort: 9999,
+		sort,
 	});
 }

@@ -6,6 +6,7 @@ import { CATEGORIES } from "@/lib/catalogue";
 import Fireworks from "@/components/Fireworks";
 import FireworksCanvas from "@/components/FireworksCanvas";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
+import Countdown from "@/components/Countdown";
 import Reveal from "@/components/Reveal";
 import {
 	MedalIcon,
@@ -179,8 +180,22 @@ export default async function Home() {
 				{/* marquee-style announcement (editable in /admin → Settings) */}
 				<div className="relative z-10 overflow-hidden bg-[#1c1c1c] py-2">
 					<div className="marquee whitespace-nowrap text-[14px] font-semibold tracking-[0.2em] text-yellow">
-						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)} · ✦&nbsp;&nbsp;&nbsp;
-						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)} · ✦&nbsp;&nbsp;&nbsp;
+						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)}
+						{site.festivalDate && (
+							<>
+								{" "}
+								· <Countdown target={site.festivalDate} label={site.festivalName} />
+							</>
+						)}{" "}
+						· ✦&nbsp;&nbsp;&nbsp;
+						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)}
+						{site.festivalDate && (
+							<>
+								{" "}
+								· <Countdown target={site.festivalDate} label={site.festivalName} />
+							</>
+						)}{" "}
+						· ✦&nbsp;&nbsp;&nbsp;
 					</div>
 				</div>
 			</section>

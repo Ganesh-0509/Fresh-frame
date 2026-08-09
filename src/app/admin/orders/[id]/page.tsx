@@ -11,6 +11,7 @@ import {
 } from "@/lib/db";
 import { money, SITE, isSafeImageDataUrl } from "@/lib/site";
 import { customerMailLink, statusEmail, emailConfigured, sendEmail, ownerEmail } from "@/lib/email";
+import { getSettings } from "@/lib/catalog";
 import { StatusPill } from "@/components/StatusPill";
 import { getCoupon } from "@/lib/coupons";
 import { couponLabel } from "@/lib/coupon-types";
@@ -24,7 +25,8 @@ export const dynamic = "force-dynamic";
 async function notify(orderId: string, status: OrderStatus) {
 	const o = await getOrder(orderId);
 	if (!o || !o.email || !emailConfigured()) return;
-	const { subject, text } = statusEmail({ ...o, status });
+	const settings = await getSettings();
+	const { subject, text } = statusEmail({ ...o, status }, settings.emailTemplates);
 	await sendEmail({ to: o.email, subject, text, replyTo: ownerEmail() });
 }
 
@@ -38,7 +40,7 @@ export default async function OrderDetail({
 	await requireAdmin();
 	const { id } = await params;
 	const { coupon: madeCode } = await searchParams;
-	const order = await getOrder(id);
+	const [order, settings] = await Promise.all([getOrder(id), getSettings()]);
 	if (!order) notFound();
 
 	const items = parseItems(order.itemsJson);
@@ -77,9 +79,17 @@ export default async function OrderDetail({
 				<h1 className="flex items-center gap-2 text-[26px] font-extrabold text-ink">
 					{order.id} <StatusPill status={order.status} />
 				</h1>
-				<span className="text-[14px] text-muted">
-					{new Date(order.createdAt).toLocaleString("en-IN")}
-				</span>
+				<div className="flex items-center gap-3">
+					<Link
+						href={`/admin/orders/${order.id}/invoice`}
+						className="rounded-lg border border-line bg-white px-3.5 py-2 text-[14px] font-semibold text-ink hover:bg-row"
+					>
+						🧾 Invoice
+					</Link>
+					<span className="text-[14px] text-muted">
+						{new Date(order.createdAt).toLocaleString("en-IN")}
+					</span>
+				</div>
 			</div>
 
 			<div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -351,8 +361,8 @@ export default async function OrderDetail({
 								<a
 									href={customerMailLink(
 										order.email,
-										statusEmail(order).subject,
-										statusEmail(order).text,
+										statusEmail(order, settings.emailTemplates).subject,
+										statusEmail(order, settings.emailTemplates).text,
 									)}
 									className="block rounded-lg bg-brand px-4 py-3 text-center text-[15px] font-bold text-white hover:brightness-110"
 								>

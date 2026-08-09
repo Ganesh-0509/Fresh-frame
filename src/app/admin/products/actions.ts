@@ -11,6 +11,7 @@ import {
 	createCategory,
 	renameCategory,
 	deleteCategory,
+	reorderProducts,
 } from "@/lib/catalog";
 import type { LineId } from "@/lib/catalog-types";
 
@@ -41,6 +42,16 @@ export async function saveProductAction(formData: FormData) {
 			await setProductImage(id, image);
 		}
 	}
+	refresh();
+}
+
+/**
+ * Called directly (not via a <form>) from the drag-and-drop handler in
+ * ProductEditor once the owner drops a row in its new place.
+ */
+export async function reorderProductsAction(categoryId: string, orderedIds: string[]) {
+	await requireAdmin();
+	if (categoryId && orderedIds.length) await reorderProducts(categoryId, orderedIds);
 	refresh();
 }
 

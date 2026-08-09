@@ -1,6 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+	DndContext,
+	closestCenter,
+	PointerSensor,
+	KeyboardSensor,
+	useSensor,
+	useSensors,
+	type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+	SortableContext,
+	verticalListSortingStrategy,
+	sortableKeyboardCoordinates,
+	arrayMove,
+	useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { LINES, type CatCategory, type CatProduct, type LineId } from "@/lib/catalog-types";
 import {
 	saveProductAction,
@@ -10,6 +27,7 @@ import {
 	renameCategoryAction,
 	deleteCategoryAction,
 	saveCategoryImageAction,
+	reorderProductsAction,
 } from "./actions";
 import PhotoPicker from "../PhotoPicker";
 
@@ -33,6 +51,33 @@ export default function ProductEditor({
 			),
 		[products, line, catId],
 	);
+
+	// Local, reorderable copy of `shown` — dragging updates this immediately
+	// (so the row moves right away) while the save happens in the background.
+	// Re-syncs whenever the underlying filter/data changes.
+	const [ordered, setOrdered] = useState(shown);
+	useEffect(() => setOrdered(shown), [shown]);
+
+	// Reordering only makes sense within ONE category (that's how `sort` is
+	// scoped server-side) — dragging is disabled in "All categories" view.
+	const dragDisabled = catId === "all";
+
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+	);
+
+	function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+		if (!over || active.id === over.id) return;
+		setOrdered((items) => {
+			const oldIndex = items.findIndex((p) => p.id === active.id);
+			const newIndex = items.findIndex((p) => p.id === over.id);
+			const next = arrayMove(items, oldIndex, newIndex);
+			reorderProductsAction(catId, next.map((p) => p.id)).catch(console.error);
+			return next;
+		});
+	}
 
 	return (
 		<div>
@@ -83,6 +128,13 @@ export default function ProductEditor({
 					{adding ? "Close" : "+ Add product"}
 				</button>
 			</div>
+
+			{dragDisabled && (
+				<p className="mb-3 text-[13px] text-muted">
+					Tip: pick one category above, then drag the <b>⠿</b> handle on the left of any
+					product to drag and drop it into the order you want.
+				</p>
+			)}
 
 			{/* category management */}
 			{mgmt && (
@@ -167,67 +219,102 @@ export default function ProductEditor({
 			)}
 
 			{/* editable rows */}
-			<div className="space-y-2">
-				<div className="hidden grid-cols-[132px_1fr_130px_84px_84px_64px_84px_120px] gap-2 px-1 text-[12px] font-semibold uppercase tracking-wide text-muted sm:grid">
-					<span>Photo</span>
-					<span>Product name</span>
-					<span>Pack</span>
-					<span>Old price ₹</span>
-					<span>Your price ₹</span>
-					<span>Show</span>
-					<span>Stock</span>
-					<span></span>
-				</div>
-				{shown.map((p) => (
-					<form
-						key={p.id}
-						action={saveProductAction}
-						className="grid items-center gap-2 rounded-xl border border-line bg-white p-2.5 shadow-sm sm:grid-cols-[132px_1fr_130px_84px_84px_64px_84px_120px]"
-					>
-						<input type="hidden" name="id" value={p.id} />
-						<PhotoPicker alt={p.name} current={p.image} />
-						<input name="name" defaultValue={p.name} className={cell} />
-						<input name="content" defaultValue={p.content} className={cell} />
-						<input name="mrp" type="number" min={0} defaultValue={p.mrp} className={cell} />
-						<input name="price" type="number" min={0} defaultValue={p.price} className={cell} />
-						<label className="flex items-center gap-1.5 text-[14px] text-ink-soft">
-							<input type="checkbox" name="active" defaultChecked={p.active} className="h-4 w-4 accent-[var(--color-brand)]" /> On
-						</label>
-						<input
-							name="stock"
-							type="number"
-							defaultValue={p.stock}
-							title="-1 = always available, 0 = sold out"
-							className={cell}
-						/>
-						<div className="flex gap-1.5">
-							<button className="flex-1 rounded-lg bg-brand px-2 py-2 text-[14px] font-semibold text-white hover:brightness-110">
-								Save
-							</button>
-							<button
-								formAction={deleteProductAction}
-								className="rounded-lg border border-red-300 px-2.5 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50"
-								title="Delete"
-							>
-								✕
-							</button>
-						</div>
-					</form>
-				))}
-				{shown.length === 0 && (
-					<p className="rounded-xl border border-dashed border-line bg-white p-6 text-center text-[15px] text-muted">
-						No products in this filter.
-					</p>
-				)}
+			<div className="hidden grid-cols-[28px_132px_1fr_130px_84px_84px_64px_84px_120px] gap-2 px-1 text-[12px] font-semibold uppercase tracking-wide text-muted sm:grid">
+				<span></span>
+				<span>Photo</span>
+				<span>Product name</span>
+				<span>Pack</span>
+				<span>Old price ₹</span>
+				<span>Your price ₹</span>
+				<span>Show</span>
+				<span>Stock</span>
+				<span></span>
 			</div>
+			<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+				<SortableContext items={ordered.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+					<div className="mt-2 space-y-2">
+						{ordered.map((p) => (
+							<SortableProductRow key={p.id} p={p} dragDisabled={dragDisabled} />
+						))}
+						{ordered.length === 0 && (
+							<p className="rounded-xl border border-dashed border-line bg-white p-6 text-center text-[15px] text-muted">
+								No products in this filter.
+							</p>
+						)}
+					</div>
+				</SortableContext>
+			</DndContext>
 			<p className="mt-3 text-[13px] text-muted">
 				Tip: <b className="text-ink-soft">Photo</b> — click the box on the left of any product and pick a
 				picture from your phone or computer. It saves and goes live by itself; there is no size limit to
 				worry about, we shrink it for you. Click <b>remove</b> to go back to the drawn icon.
 				<br />
 				Tip: <b className="text-ink-soft">Stock</b> — leave it as <b>−1</b> for &ldquo;always available&rdquo;, or set <b>0</b> to show &ldquo;Sold out&rdquo;.
+				<br />
+				Tip: <b className="text-ink-soft">⠿</b> — press and drag to reorder. This is the order customers see it in on the price list. Works with a finger on your phone too.
 			</p>
 		</div>
+	);
+}
+
+function SortableProductRow({ p, dragDisabled }: { p: CatProduct; dragDisabled: boolean }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: p.id,
+		disabled: dragDisabled,
+	});
+	const style = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+		opacity: isDragging ? 0.5 : 1,
+		zIndex: isDragging ? 1 : "auto",
+	};
+
+	return (
+		<form
+			ref={setNodeRef}
+			style={style}
+			action={saveProductAction}
+			className="grid items-center gap-2 rounded-xl border border-line bg-white p-2.5 shadow-sm sm:grid-cols-[28px_132px_1fr_130px_84px_84px_64px_84px_120px]"
+		>
+			<button
+				type="button"
+				{...attributes}
+				{...listeners}
+				disabled={dragDisabled}
+				title={dragDisabled ? "Pick one category above to reorder" : "Drag to reorder"}
+				className="touch-none rounded-lg border border-line px-1.5 py-2 text-[16px] leading-none text-muted hover:bg-row active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-30 sm:cursor-grab"
+			>
+				⠿
+			</button>
+			<input type="hidden" name="id" value={p.id} />
+			<PhotoPicker alt={p.name} current={p.image} />
+			<input name="name" defaultValue={p.name} className={cell} />
+			<input name="content" defaultValue={p.content} className={cell} />
+			<input name="mrp" type="number" min={0} defaultValue={p.mrp} className={cell} />
+			<input name="price" type="number" min={0} defaultValue={p.price} className={cell} />
+			<label className="flex items-center gap-1.5 text-[14px] text-ink-soft">
+				<input type="checkbox" name="active" defaultChecked={p.active} className="h-4 w-4 accent-[var(--color-brand)]" /> On
+			</label>
+			<input
+				name="stock"
+				type="number"
+				defaultValue={p.stock}
+				title="-1 = always available, 0 = sold out"
+				className={cell}
+			/>
+			<div className="flex gap-1.5">
+				<button className="flex-1 rounded-lg bg-brand px-2 py-2 text-[14px] font-semibold text-white hover:brightness-110">
+					Save
+				</button>
+				<button
+					formAction={deleteProductAction}
+					className="rounded-lg border border-red-300 px-2.5 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50"
+					title="Delete"
+				>
+					✕
+				</button>
+			</div>
+		</form>
 	);
 }
 
