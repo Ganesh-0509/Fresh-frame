@@ -8,6 +8,7 @@ import FireworksCanvas from "@/components/FireworksCanvas";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import Countdown from "@/components/Countdown";
 import Reveal from "@/components/Reveal";
+import Zoomable from "@/components/Zoomable";
 import {
 	MedalIcon,
 	TruckIcon,
@@ -207,8 +208,7 @@ export default async function Home() {
 						<div className={`grid gap-4 ${banners.length > 1 ? "sm:grid-cols-2" : ""}`}>
 							{banners.map((b, i) => (
 								<figure key={b.id} className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
-									{/* eslint-disable-next-line @next/next/no-img-element */}
-									<img
+									<Zoomable
 										src={b.url}
 										alt={b.caption || `${site.name} banner`}
 										loading={i === 0 ? "eager" : "lazy"}

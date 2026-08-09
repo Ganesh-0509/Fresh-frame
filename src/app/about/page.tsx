@@ -16,6 +16,7 @@ import {
 	ExpandIcon,
 	ClockIcon,
 } from "@/components/icons";
+import Zoomable from "@/components/Zoomable";
 
 type Item = { Icon: ComponentType<{ className?: string }>; title: string; body: string };
 
@@ -78,8 +79,7 @@ export default async function AboutPage() {
 				<div className="mx-auto grid max-w-292.5 items-center gap-10 px-4 md:grid-cols-2">
 					{lead ? (
 						<figure>
-							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img
+							<Zoomable
 								src={lead.url}
 								alt={lead.caption || `${site.name} shop`}
 								className="aspect-4/3 w-full rounded-xl border border-line object-cover shadow-sm"
@@ -127,8 +127,7 @@ export default async function AboutPage() {
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							{rest.map((ph) => (
 								<figure key={ph.id}>
-									{/* eslint-disable-next-line @next/next/no-img-element */}
-									<img
+									<Zoomable
 										src={ph.url}
 										alt={ph.caption || `${site.name} photo`}
 										loading="lazy"

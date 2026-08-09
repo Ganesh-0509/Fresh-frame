@@ -11,6 +11,7 @@ import {
 	type LineId,
 } from "@/lib/catalog-types";
 import { CategoryIcon, WhatsAppIcon } from "@/components/icons";
+import Zoomable from "@/components/Zoomable";
 import { useCart } from "@/lib/cart";
 
 export default function EstimateBuilder({
@@ -214,8 +215,7 @@ export default function EstimateBuilder({
 					<section key={c.id} id={c.id} className="mb-10 scroll-mt-28">
 						<h3 className="mb-3 flex items-center gap-2.5 border-b-2 border-brand pb-2 text-lg font-semibold text-ink">
 							{c.image ? (
-								// eslint-disable-next-line @next/next/no-img-element
-								<img
+								<Zoomable
 									src={c.image}
 									alt={c.name}
 									loading="lazy"
@@ -257,8 +257,7 @@ export default function EstimateBuilder({
 													<div className="flex items-center gap-2.5">
 														{/* The product's own photo, else its category photo, else the drawn icon. */}
 														{p.image || c.image ? (
-															// eslint-disable-next-line @next/next/no-img-element
-															<img
+															<Zoomable
 																src={p.image || c.image}
 																alt={p.name}
 																loading="lazy"

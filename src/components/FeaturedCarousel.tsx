@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CategoryIcon, ChevronIcon, SparkBurst } from "@/components/icons";
+import Zoomable from "@/components/Zoomable";
 
 /** `image` = owner-uploaded category photo URL, "" → the drawn icon is used. */
 type Item = { id: string; name: string; image: string };
@@ -69,8 +70,7 @@ export default function FeaturedCarousel({
 								<div className="flex aspect-16/10 items-center justify-center overflow-hidden bg-linear-to-br from-[#fff7e6] to-[#fdeccb]">
 									{c.image ? (
 										// The owner's own category photo (admin → Products → Manage categories).
-										// eslint-disable-next-line @next/next/no-img-element
-										<img
+										<Zoomable
 											src={c.image}
 											alt={c.name}
 											loading={k === 0 ? "eager" : "lazy"}
