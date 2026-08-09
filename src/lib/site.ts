@@ -38,7 +38,7 @@ export const SITE = {
   // "indicative prices" notice, so no customer can order at an invented rate and
   // Google never caches a fake price list.
   // 👉 Flip to FALSE the moment the client's real prices are loaded, then redeploy.
-  pricesAreProvisional: true,
+  pricesAreProvisional: false,
 
   // ---- SPEND-BASED EXTRA DISCOUNT SLABS (shown on the hero banner) ----
   // ⚠️ Placeholder percentages — CLIENT to confirm the real slabs.
