@@ -12,6 +12,7 @@ import {
 	renameCategory,
 	deleteCategory,
 	reorderProducts,
+	reorderCategories,
 } from "@/lib/catalog";
 import type { LineId } from "@/lib/catalog-types";
 
@@ -52,6 +53,16 @@ export async function saveProductAction(formData: FormData) {
 export async function reorderProductsAction(categoryId: string, orderedIds: string[]) {
 	await requireAdmin();
 	if (categoryId && orderedIds.length) await reorderProducts(categoryId, orderedIds);
+	refresh();
+}
+
+/**
+ * Called directly (not via a <form>) from the drag-and-drop handler for the
+ * "Manage categories" list once the owner drops a category in its new place.
+ */
+export async function reorderCategoriesAction(line: LineId, orderedIds: string[]) {
+	await requireAdmin();
+	if (orderedIds.length) await reorderCategories(line, orderedIds);
 	refresh();
 }
 

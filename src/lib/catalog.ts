@@ -348,6 +348,22 @@ export async function renameCategory(id: string, name: string): Promise<void> {
 	await db().update(categories).set({ name }).where(eq(categories.id, id));
 }
 
+/**
+ * Persist a drag-and-drop reorder of categories within one line — same
+ * pattern as reorderProducts. IDs not belonging to `line` are ignored.
+ */
+export async function reorderCategories(line: LineId, orderedIds: string[]): Promise<void> {
+	const d = db();
+	const rows = await d.select({ id: categories.id, line: categories.line }).from(categories).where(eq(categories.line, line));
+	const valid = new Set(rows.map((r) => r.id));
+	let k = 0;
+	for (const id of orderedIds) {
+		if (!valid.has(id)) continue;
+		await d.update(categories).set({ sort: k }).where(eq(categories.id, id));
+		k++;
+	}
+}
+
 /** Delete a category only if it has no products. Returns false if it still has products. */
 export async function deleteCategory(id: string): Promise<boolean> {
 	const d = db();

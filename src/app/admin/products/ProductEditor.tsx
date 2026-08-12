@@ -28,6 +28,7 @@ import {
 	deleteCategoryAction,
 	saveCategoryImageAction,
 	reorderProductsAction,
+	reorderCategoriesAction,
 } from "./actions";
 import PhotoPicker from "../PhotoPicker";
 
@@ -39,7 +40,12 @@ export default function ProductEditor({
 	products: CatProduct[];
 }) {
 	const [line, setLine] = useState<LineId>("standard");
-	const [catId, setCatId] = useState<string>("all");
+	// Default straight into the first category (not "All") so the drag handle
+	// is already active on load — reordering only works within one category,
+	// and picking one shouldn't be a separate step before you can drag.
+	const [catId, setCatId] = useState<string>(
+		() => categories.find((c) => c.line === "standard")?.id ?? "all",
+	);
 	const [adding, setAdding] = useState(false);
 	const [mgmt, setMgmt] = useState(false);
 
@@ -79,6 +85,23 @@ export default function ProductEditor({
 		});
 	}
 
+	// Same drag-and-drop pattern as products, but for the category list itself
+	// (Manage categories panel) — scoped to the current line, like `sort` is.
+	const [orderedCats, setOrderedCats] = useState(cats);
+	useEffect(() => setOrderedCats(cats), [cats]);
+
+	function handleCategoryDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+		if (!over || active.id === over.id) return;
+		setOrderedCats((items) => {
+			const oldIndex = items.findIndex((c) => c.id === active.id);
+			const newIndex = items.findIndex((c) => c.id === over.id);
+			const next = arrayMove(items, oldIndex, newIndex);
+			reorderCategoriesAction(line, next.map((c) => c.id)).catch(console.error);
+			return next;
+		});
+	}
+
 	return (
 		<div>
 			{/* line toggle */}
@@ -88,7 +111,7 @@ export default function ProductEditor({
 						key={l.id}
 						onClick={() => {
 							setLine(l.id);
-							setCatId("all");
+							setCatId(categories.find((c) => c.line === l.id)?.id ?? "all");
 						}}
 						className={`rounded-lg px-4 py-2.5 text-[15px] font-semibold ${
 							line === l.id ? "bg-brand text-white shadow-sm" : "border border-line bg-white text-ink-soft hover:bg-row"
@@ -144,39 +167,19 @@ export default function ProductEditor({
 					</h3>
 					<p className="mb-3 text-[13px] text-muted">
 						The picture you add here is used on the home page and at the top of that category
-						on the price list — and for any product in it that has no photo of its own.
+						on the price list — and for any product in it that has no photo of its own. Drag the{" "}
+						<b>⠿</b> handle to change the order categories appear in.
 					</p>
-					<div className="space-y-2">
-						{cats.map((c) => {
-							const count = products.filter((p) => p.categoryId === c.id).length;
-							return (
-								<div key={c.id} className="flex flex-wrap items-center gap-2">
-									<form action={saveCategoryImageAction} className="flex items-center">
-										<input type="hidden" name="id" value={c.id} />
-										<PhotoPicker alt={c.name} current={c.image} size={48} />
-									</form>
-									<form action={renameCategoryAction} className="flex flex-1 items-center gap-2">
-										<input type="hidden" name="id" value={c.id} />
-										<input name="name" defaultValue={c.name} className={cell} />
-										<button className="rounded-lg bg-brand px-3 py-2 text-[14px] font-semibold text-white hover:brightness-110">
-											Rename
-										</button>
-									</form>
-									<span className="text-[13px] text-muted">{count} products</span>
-									<form action={deleteCategoryAction}>
-										<input type="hidden" name="id" value={c.id} />
-										<button
-											disabled={count > 0}
-											title={count > 0 ? "Empty the category first" : "Delete category"}
-											className="rounded-lg border border-red-300 px-2.5 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"
-										>
-											Delete
-										</button>
-									</form>
-								</div>
-							);
-						})}
-					</div>
+					<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+						<SortableContext items={orderedCats.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+							<div className="space-y-2">
+								{orderedCats.map((c) => {
+									const count = products.filter((p) => p.categoryId === c.id).length;
+									return <SortableCategoryRow key={c.id} c={c} count={count} />;
+								})}
+							</div>
+						</SortableContext>
+					</DndContext>
 					<form action={createCategoryAction} className="mt-3 flex items-center gap-2 border-t border-line pt-3">
 						<input type="hidden" name="line" value={line} />
 						<input name="name" required placeholder="New category name" className={cell} />
@@ -253,6 +256,54 @@ export default function ProductEditor({
 				<br />
 				Tip: <b className="text-ink-soft">⠿</b> — press and drag to reorder. This is the order customers see it in on the price list. Works with a finger on your phone too.
 			</p>
+		</div>
+	);
+}
+
+function SortableCategoryRow({ c, count }: { c: CatCategory; count: number }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: c.id,
+	});
+	const style = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+		opacity: isDragging ? 0.5 : 1,
+		zIndex: isDragging ? 1 : "auto",
+	};
+
+	return (
+		<div ref={setNodeRef} style={style} className="flex flex-wrap items-center gap-2">
+			<button
+				type="button"
+				{...attributes}
+				{...listeners}
+				title="Drag to reorder"
+				className="touch-none rounded-lg border border-line px-1.5 py-2 text-[16px] leading-none text-muted hover:bg-row active:cursor-grabbing sm:cursor-grab"
+			>
+				⠿
+			</button>
+			<form action={saveCategoryImageAction} className="flex items-center">
+				<input type="hidden" name="id" value={c.id} />
+				<PhotoPicker alt={c.name} current={c.image} size={48} />
+			</form>
+			<form action={renameCategoryAction} className="flex flex-1 items-center gap-2">
+				<input type="hidden" name="id" value={c.id} />
+				<input name="name" defaultValue={c.name} className={cell} />
+				<button className="rounded-lg bg-brand px-3 py-2 text-[14px] font-semibold text-white hover:brightness-110">
+					Rename
+				</button>
+			</form>
+			<span className="text-[13px] text-muted">{count} products</span>
+			<form action={deleteCategoryAction}>
+				<input type="hidden" name="id" value={c.id} />
+				<button
+					disabled={count > 0}
+					title={count > 0 ? "Empty the category first" : "Delete category"}
+					className="rounded-lg border border-red-300 px-2.5 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"
+				>
+					Delete
+				</button>
+			</form>
 		</div>
 	);
 }
