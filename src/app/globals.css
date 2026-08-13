@@ -409,6 +409,62 @@ body {
 	animation-play-state: paused;
 }
 
+/* Flip-clock festival countdown tile (Countdown.tsx) — one card per digit
+   group; re-keyed on every value change so the flip animation replays. */
+.flip-card {
+	position: relative;
+	display: flex;
+	width: 2.4rem;
+	height: 2.2rem;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: 0.4rem;
+	border: 1px solid rgba(231, 198, 94, 0.35);
+	background: linear-gradient(180deg, #3a1018 0%, #1c0509 100%);
+	box-shadow:
+		0 2px 6px rgba(0, 0, 0, 0.45),
+		inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	font-size: 1.1rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-gold);
+	perspective: 240px;
+	animation: flipTile 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* center crease — reads as a real split-flap display */
+.flip-card::after {
+	content: "";
+	position: absolute;
+	inset: 50% 0 auto 0;
+	height: 1px;
+	background: rgba(0, 0, 0, 0.55);
+}
+@keyframes flipTile {
+	0% {
+		transform: rotateX(-55deg);
+	}
+	60% {
+		transform: rotateX(6deg);
+	}
+	100% {
+		transform: rotateX(0deg);
+	}
+}
+.flip-sep {
+	font-size: 1.05rem;
+	font-weight: 800;
+	color: var(--color-gold);
+	opacity: 0.5;
+}
+@media (min-width: 640px) {
+	.flip-card {
+		width: 2.85rem;
+		height: 2.6rem;
+		font-size: 1.3rem;
+	}
+}
+
 /* Discount slab rows — pulse highlight in sequence. */
 .tier-row {
 	animation: tierPulse 3s ease-in-out infinite;

@@ -6,10 +6,14 @@
  * (case-insensitive), so the client's actual transport-agent sheet — headers
  * `S.No, Address, Location, Country, State, City, Postcode, Google Map Link,
  * Status` — is recognised directly: `Address` is the area name (their sheet
- * puts the full pickup-point name/phone number there), `City` is the city
- * (falling back to `Location` for the handful of rows where City is blank),
- * and `Google Map Link` is the map link. `S.No`/`Country`/`Postcode`/`Status`
- * are simply ignored — we don't need them.
+ * puts the full pickup-point name/phone number there) EXCEPT for rows inside
+ * Chennai city, where `Address` is the transport agent's own office
+ * address/phone and `Location` holds the actual named delivery area (e.g.
+ * "Sriperumbudur", "Vadapalani") — so for those rows `Location` is used as
+ * the area name instead. `City` is the city (falling back to `Location` for
+ * the handful of rows where City is blank), and `Google Map Link` is the map
+ * link. `S.No`/`Country`/`Postcode`/`Status` are simply ignored — we don't
+ * need them.
  *
  * One row = one area (or, for a city with no areas yet, one row with the area
  * column blank). Export/template columns: State, DeliveryFee, City, Area,
@@ -103,7 +107,9 @@ function mapRows(headerRow: unknown[], dataRows: unknown[][]): DeliveryCsvRow[] 
 		const feeRaw = cell(r, iFee);
 		const fee = feeRaw !== "" && Number.isFinite(Number(feeRaw)) ? Math.max(0, Math.floor(Number(feeRaw))) : null;
 		const city = cell(r, iCity) || cell(r, iLocation);
-		rows.push({ state, fee, city, area: cell(r, iArea), mapsLink: cell(r, iMap) });
+		const isChennai = city.trim().toLowerCase() === "chennai";
+		const area = isChennai ? cell(r, iLocation) || cell(r, iArea) : cell(r, iArea);
+		rows.push({ state, fee, city, area, mapsLink: cell(r, iMap) });
 	}
 	return rows;
 }

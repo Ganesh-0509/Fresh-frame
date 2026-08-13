@@ -178,25 +178,18 @@ export default async function Home() {
 					</div>
 				</div>
 
+				{/* live flip-clock countdown to the festival (Admin → Settings → Announcement banner) */}
+				{site.festivalDate && (
+					<div className="relative z-10 border-t border-yellow/15 bg-black/30 py-3 backdrop-blur-sm">
+						<Countdown target={site.festivalDate} label={site.festivalName} />
+					</div>
+				)}
+
 				{/* marquee-style announcement (editable in /admin → Settings) */}
 				<div className="relative z-10 overflow-hidden bg-[#1c1c1c] py-2">
 					<div className="marquee whitespace-nowrap text-[14px] font-semibold tracking-[0.2em] text-yellow">
-						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)}
-						{site.festivalDate && (
-							<>
-								{" "}
-								· <Countdown target={site.festivalDate} label={site.festivalName} />
-							</>
-						)}{" "}
-						· ✦&nbsp;&nbsp;&nbsp;
-						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)}
-						{site.festivalDate && (
-							<>
-								{" "}
-								· <Countdown target={site.festivalDate} label={site.festivalName} />
-							</>
-						)}{" "}
-						· ✦&nbsp;&nbsp;&nbsp;
+						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)} · ✦&nbsp;&nbsp;&nbsp;
+						✦ {site.announcement} · MINIMUM ORDER {money(site.minOrder)} · ✦&nbsp;&nbsp;&nbsp;
 					</div>
 				</div>
 			</section>

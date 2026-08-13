@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-const pad = (n: number) => String(n).padStart(2, "0");
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /**
- * Live countdown to a festival date, e.g. "12d 04h 33m 07s to Deepavali".
+ * Live countdown to a festival date, rendered as a mechanical flip-clock
+ * (one tile per digit group, flipping in place as each unit ticks over).
  * Renders nothing until mounted (and nothing once the date has passed) — the
  * placeholder-then-fill pattern avoids a hydration mismatch, since the server
  * has no concept of "now" for a ticking clock.
@@ -31,8 +32,32 @@ export default function Countdown({ target, label }: { target: string; label: st
 	const secs = Math.floor((diff % 60000) / 1000);
 
 	return (
-		<>
-			⏳ {days}d {pad(hours)}h {pad(mins)}m {pad(secs)}s to {label}
-		</>
+		<div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+			<span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow/80 sm:text-[13px]">
+				⏳ Counting down to {label}
+			</span>
+			<FlipUnit value={days} unitLabel="Days" />
+			<span className="flip-sep">:</span>
+			<FlipUnit value={hours} unitLabel="Hrs" />
+			<span className="flip-sep">:</span>
+			<FlipUnit value={mins} unitLabel="Min" />
+			<span className="flip-sep">:</span>
+			<FlipUnit value={secs} unitLabel="Sec" />
+		</div>
+	);
+}
+
+function FlipUnit({ value, unitLabel }: { value: number; unitLabel: string }) {
+	const display = pad2(value);
+	return (
+		<div className="flex flex-col items-center gap-1">
+			{/* key={display} forces a remount on every change, replaying the flip animation */}
+			<div key={display} className="flip-card">
+				{display}
+			</div>
+			<span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-gold/70 sm:text-[10px]">
+				{unitLabel}
+			</span>
+		</div>
 	);
 }
