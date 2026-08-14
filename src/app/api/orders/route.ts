@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, orders, newOrderId } from "@/lib/db";
+import { getDb, orders, newOrderId, type OrderItem } from "@/lib/db";
 import { sendEmail, ownerEmail, ownerOrderEmail, statusEmail } from "@/lib/email";
+import { buildInvoicePdf } from "@/lib/invoice-pdf";
 import { cleanMapUrl, gstAmount, bestTier, tierDiscount } from "@/lib/site";
 import { getSettings } from "@/lib/catalog";
 import { checkCoupon } from "@/lib/coupons";
@@ -92,11 +93,20 @@ export async function POST(req: NextRequest) {
 
 	// Order is created BEFORE payment with status "pending_payment" (visible in admin).
 	const id = newOrderId(new Date().getFullYear());
+	const createdAt = Date.now();
+	const orderItems: OrderItem[] = items.map((it) => ({
+		id: it.id,
+		name: it.name,
+		content: it.content ?? "",
+		qty: Number(it.qty) || 0,
+		unit: Number(it.unit) || 0,
+		total: Number(it.total) || 0,
+	}));
 	try {
 		const db = getDb();
 		await db.insert(orders).values({
 			id,
-			createdAt: Date.now(),
+			createdAt,
 			status: "pending_payment",
 			customerName: name,
 			phone,
@@ -109,16 +119,7 @@ export async function POST(req: NextRequest) {
 			area: area || null,
 			areaMap: areaMap || null,
 			pincode,
-			itemsJson: JSON.stringify(
-				items.map((it) => ({
-					id: it.id,
-					name: it.name,
-					content: it.content ?? "",
-					qty: Number(it.qty) || 0,
-					unit: Number(it.unit) || 0,
-					total: Number(it.total) || 0,
-				})),
-			),
+			itemsJson: JSON.stringify(orderItems),
 			itemCount,
 			total,
 			gst,
@@ -168,13 +169,52 @@ export async function POST(req: NextRequest) {
 	// Confirm the order to the CUSTOMER too — this used to only happen if the
 	// owner later opened the order in admin and changed its status by hand, so
 	// most customers never got anything until the owner manually emailed them.
+	// The invoice PDF rides along on this first email so the customer has the
+	// itemised bill in hand before they pay (settings?.gstNumber / prices may
+	// still be TBC at this point — the PDF shows that the same way the invoice
+	// page does).
 	if (custEmail) {
 		try {
 			const { subject, text } = statusEmail(
 				{ id, customerName: name, status: "pending_payment", area: area || null, city, areaMap: areaMap || null },
 				settings?.emailTemplates,
 			);
-			await sendEmail({ to: custEmail, subject, text, replyTo: ownerEmail() });
+			let attachments: { filename: string; content: string }[] | undefined;
+			try {
+				const pdfBytes = await buildInvoicePdf(
+					{
+						id,
+						createdAt,
+						status: "pending_payment",
+						customerName: name,
+						phone,
+						address,
+						city,
+						state,
+						area: area || null,
+						pincode,
+						email: custEmail || null,
+						gstNo: str(body.gstNo) || null,
+						total,
+						gst,
+						transport,
+						grandTotal,
+						hasPrices,
+						tierDiscount: tierOff,
+						tierLabel: tier?.label ?? null,
+						couponCode: couponCode || null,
+						couponDiscount,
+						paymentRef: null,
+						utr: null,
+					},
+					orderItems,
+					settings ?? (await getSettings()),
+				);
+				attachments = [{ filename: `Invoice-${id}.pdf`, content: Buffer.from(pdfBytes).toString("base64") }];
+			} catch (e) {
+				console.error("invoice pdf failed", e);
+			}
+			await sendEmail({ to: custEmail, subject, text, replyTo: ownerEmail(), attachments });
 		} catch (e) {
 			console.error("customer notify failed", e);
 		}

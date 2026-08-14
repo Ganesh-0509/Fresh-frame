@@ -77,6 +77,11 @@ export function statusEmail(
 
 	let line: string;
 	switch (s) {
+		case "pending_payment":
+			line =
+				`we've received your order ${order.id} — the invoice is attached. Please complete the payment ` +
+				`and share the receipt; we'll verify it and keep you updated as your order moves through each stage.`;
+			break;
 		case "verified":
 			line = `your payment for order ${order.id} is verified ✅. Your order is confirmed and we'll start preparing it.`;
 			break;
@@ -167,6 +172,8 @@ export async function sendEmail(opts: {
 	text: string;
 	html?: string;
 	replyTo?: string;
+	/** Resend wants file content as base64 (no data: prefix). */
+	attachments?: { filename: string; content: string }[];
 }): Promise<boolean> {
 	const e = env();
 	if (!e.RESEND_API_KEY || !e.EMAIL_FROM) return false;
@@ -185,6 +192,7 @@ export async function sendEmail(opts: {
 				text: opts.text,
 				...(opts.html ? { html: opts.html } : {}),
 				...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
+				...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
 			}),
 		});
 		if (!res.ok) {

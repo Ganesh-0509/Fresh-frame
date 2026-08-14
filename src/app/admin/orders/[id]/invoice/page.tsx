@@ -29,7 +29,15 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 				<Link href={`/admin/orders/${order.id}`} className="text-[15px] font-semibold text-brand hover:underline">
 					← Back to order
 				</Link>
-				<PrintButton />
+				<div className="flex gap-2">
+					<a
+						href={`/admin/orders/${order.id}/invoice-pdf`}
+						className="rounded-lg border border-line bg-white px-5 py-2.5 text-[15px] font-semibold text-ink hover:bg-row"
+					>
+						⬇️ Download PDF
+					</a>
+					<PrintButton />
+				</div>
 			</div>
 
 			{!order.hasPrices && (

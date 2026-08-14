@@ -131,7 +131,7 @@ export type EmailTemplate = { subject?: string; body?: string };
 export const EMAIL_TEMPLATE_DEFAULTS: Partial<Record<OrderStatus, Required<EmailTemplate>>> = {
 	pending_payment: {
 		subject: "{shopName} · Order {orderId} — {statusLabel}",
-		body: "we've received your order {orderId}. Please complete the payment and share the receipt so we can confirm it.",
+		body: "we've received your order {orderId} — the invoice is attached. Please complete the payment and share the receipt; we'll verify it and keep you updated as your order moves through each stage.",
 	},
 	pending_verification: {
 		subject: "{shopName} · Order {orderId} — {statusLabel}",

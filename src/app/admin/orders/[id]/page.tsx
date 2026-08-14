@@ -353,10 +353,18 @@ export default async function OrderDetail({
 					</Card>
 
 					<Card title="Email the customer">
+						<a
+							href={`/admin/orders/${order.id}/invoice-pdf`}
+							className="mb-3 block rounded-lg border border-line bg-white px-4 py-2.5 text-center text-[14.5px] font-semibold text-ink hover:bg-row"
+						>
+							🧾 Download invoice PDF
+						</a>
 						{order.email ? (
 							<>
 								<p className="mb-3 text-[14px] text-muted">
-									Send a status update by email.
+									{emailConfigured()
+										? "Send a status update by email."
+										: "Send a status update by email — attach the PDF above first; mailto links can't attach files automatically."}
 								</p>
 								<a
 									href={customerMailLink(
@@ -366,7 +374,7 @@ export default async function OrderDetail({
 									)}
 									className="block rounded-lg bg-brand px-4 py-3 text-center text-[15px] font-bold text-white hover:brightness-110"
 								>
-									Open email with “{STATUS_LABEL[order.status as OrderStatus]}” message
+									Open email with "{STATUS_LABEL[order.status as OrderStatus]}" message
 								</a>
 							</>
 						) : (
@@ -376,8 +384,8 @@ export default async function OrderDetail({
 						)}
 						<p className="mt-3 text-[13px] text-muted">
 							{emailConfigured()
-								? "Emails are on — status changes send automatically."
-								: `Automatic emails aren't switched on yet. Until then, use the button above to send one yourself.`}
+								? "Emails are on — status changes send automatically, and the invoice PDF rides along on the order-received email."
+								: `Automatic emails aren't switched on yet. Download the invoice PDF above, then use "Open email" and attach it yourself before sending.`}
 						</p>
 					</Card>
 				</div>
