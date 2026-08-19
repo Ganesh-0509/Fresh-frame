@@ -1,11 +1,17 @@
 import { requireAdmin, hasOwnPassword, MIN_PASSWORD_LENGTH } from "@/lib/admin-auth";
 import { changePasswordAction } from "./password-actions";
-import { getSettings } from "@/lib/catalog";
+import { getSettings, getPriceListPdfMeta } from "@/lib/catalog";
 import { emailConfigured, ownerEmail } from "@/lib/email";
 import { areaKey, EMAIL_TEMPLATE_TOKENS, EMAIL_TEMPLATE_DEFAULTS } from "@/lib/site";
 import { ORDER_STATUSES, STATUS_LABEL } from "@/lib/db";
 import EmailTemplateRow from "./EmailTemplateRow";
-import { saveSettingsAction, sendTestEmailAction, importDeliveryFileAction } from "./actions";
+import {
+	saveSettingsAction,
+	sendTestEmailAction,
+	importDeliveryFileAction,
+	uploadPriceListPdfAction,
+	deletePriceListPdfAction,
+} from "./actions";
 import ImageInput from "./ImageInput";
 import AreaRows from "./AreaRows";
 import { aCard, aCardTitle, aCardSub, aLabel, aHint, aInput, aBtn, aBtnGhost, aPageTitle, aSuccess } from "@/lib/admin-ui";
@@ -15,13 +21,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettings({
 	searchParams,
 }: {
-	searchParams: Promise<{ saved?: string; test?: string; pw?: string; import?: string }>;
+	searchParams: Promise<{ saved?: string; test?: string; pw?: string; import?: string; pdf?: string }>;
 }) {
 	await requireAdmin();
-	const s = await getSettings();
+	const [s, priceListPdf] = await Promise.all([getSettings(), getPriceListPdfMeta()]);
 	const mail = emailConfigured();
 	const inbox = ownerEmail();
-	const { saved, test, pw, import: imported } = await searchParams;
+	const { saved, test, pw, import: imported, pdf: pdfMsg } = await searchParams;
 	const ownPassword = await hasOwnPassword();
 
 	return (
@@ -185,6 +191,80 @@ export default async function AdminSettings({
 					areas yet). A Delivery Fee column is optional — only needs to be on one row per
 					state (the last one wins) — leave it out entirely if you set fees by hand below.
 				</p>
+			</div>
+
+			{/* ---- Price list PDF (own form — outside the big Save-changes form below) ---- */}
+			<div id="price-list-pdf" className={`mb-6 ${aCard}`}>
+				<h2 className={aCardTitle}>📄 Price list PDF</h2>
+				<p className={aCardSub}>
+					The <b className="text-ink-soft">Price List</b> button at the top of every page
+					downloads this file straight away — no page to click through. Upload the real price
+					list here whenever it changes; the button always serves the latest one. Until you
+					upload one, that button just goes to the price page instead.
+				</p>
+
+				{pdfMsg === "empty" && (
+					<p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13.5px] text-red-700">
+						Choose a PDF file first.
+					</p>
+				)}
+				{pdfMsg === "badfile" && (
+					<p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13.5px] text-red-700">
+						That doesn&apos;t look like a real PDF — please upload a .pdf file.
+					</p>
+				)}
+				{pdfMsg === "toobig" && (
+					<p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13.5px] text-red-700">
+						That file is too large — keep it under 1.4 MB. A plain price list (no scanned
+						photos) is normally well under 200 KB; export it from Word/Excel again if it&apos;s
+						bigger.
+					</p>
+				)}
+				{pdfMsg === "uploaded" && (
+					<p className="mb-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[13.5px] text-emerald-800">
+						✓ Uploaded — the Price List button now downloads this file.
+					</p>
+				)}
+				{pdfMsg === "deleted" && (
+					<p className="mb-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[13.5px] text-emerald-800">
+						✓ Removed — the Price List button goes to the price page until you upload another.
+					</p>
+				)}
+
+				{priceListPdf ? (
+					<div className="mb-3 flex flex-wrap items-center gap-2">
+						<a
+							href={priceListPdf.url}
+							className="rounded-lg border border-line bg-white px-3 py-2 text-[14px] font-semibold text-ink hover:bg-row"
+						>
+							⬇️ Current file: {priceListPdf.filename}
+						</a>
+						<form action={deletePriceListPdfAction}>
+							<button className="rounded-lg border border-red-300 px-3 py-2 text-[14px] font-semibold text-red-600 hover:bg-red-50">
+								Delete
+							</button>
+						</form>
+					</div>
+				) : (
+					<p className="mb-3 text-[13.5px] text-muted">No PDF uploaded yet.</p>
+				)}
+
+				<form
+					action={uploadPriceListPdfAction}
+					encType="multipart/form-data"
+					className="flex flex-wrap items-center gap-2"
+				>
+					<input
+						type="file"
+						name="priceListPdf"
+						accept=".pdf,application/pdf"
+						required
+						className="text-[14px] text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:text-[14px] file:font-semibold file:text-white hover:file:brightness-110"
+					/>
+					<button className="rounded-lg bg-brand px-4 py-2.5 text-[14px] font-semibold text-white hover:brightness-110">
+						{priceListPdf ? "Replace PDF" : "Upload PDF"}
+					</button>
+				</form>
 			</div>
 
 			<form action={saveSettingsAction} className="space-y-6">

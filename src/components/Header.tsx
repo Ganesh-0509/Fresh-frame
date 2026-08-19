@@ -123,12 +123,24 @@ export default function Header({ site }: { site: PublicSite }) {
 
           {/* right: sticky actions — travel with the header on scroll */}
           <div className="flex items-center gap-2">
-            <Link
-              href="/products"
-              className="hidden rounded-md border border-yellow/70 px-3 py-1.5 text-[14px] font-semibold text-gold transition-colors hover:bg-yellow/15 sm:inline-flex"
-            >
-              Price List
-            </Link>
+            {site.priceListPdfUrl ? (
+              // A real PDF has been uploaded (admin → Settings) — download it
+              // straight away instead of navigating to the products page.
+              <a
+                href={site.priceListPdfUrl}
+                download
+                className="hidden rounded-md border border-yellow/70 px-3 py-1.5 text-[14px] font-semibold text-gold transition-colors hover:bg-yellow/15 sm:inline-flex"
+              >
+                Price List
+              </a>
+            ) : (
+              <Link
+                href="/products"
+                className="hidden rounded-md border border-yellow/70 px-3 py-1.5 text-[14px] font-semibold text-gold transition-colors hover:bg-yellow/15 sm:inline-flex"
+              >
+                Price List
+              </Link>
+            )}
             {/*
               "Order Now" goes to the PRICE LIST, not WhatsApp. Ordering happens on the
               site (pick quantities → checkout); firing the customer into WhatsApp here

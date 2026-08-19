@@ -7,7 +7,7 @@ import PublicOnly from "@/components/PublicOnly";
 import WelcomePopup from "@/components/WelcomePopup";
 import { CartProvider } from "@/lib/cart";
 import { SITE, publicSite } from "@/lib/site";
-import { getSettings, getLogoUrl } from "@/lib/catalog";
+import { getSettings, getLogoUrl, getPriceListPdfMeta } from "@/lib/catalog";
 import JsonLd from "@/components/JsonLd";
 import { SEO_KEYWORDS, localBusinessJsonLd, websiteJsonLd } from "@/lib/seo";
 
@@ -69,8 +69,12 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const [settings, logoUrl] = await Promise.all([getSettings(), getLogoUrl()]);
-	const site = publicSite(settings, logoUrl);
+	const [settings, logoUrl, priceListPdf] = await Promise.all([
+		getSettings(),
+		getLogoUrl(),
+		getPriceListPdfMeta(),
+	]);
+	const site = publicSite(settings, logoUrl, priceListPdf?.url ?? "");
 	return (
 		<html lang="en" className={rubik.variable}>
 			<head>

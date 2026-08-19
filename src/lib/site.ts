@@ -348,13 +348,16 @@ export const DEFAULT_SETTINGS: Settings = {
  * Public pages/components consume THIS (via getSettings), so admin edits show
  * up immediately on the live site.
  */
-export function publicSite(s: Settings, logoUrl = "") {
+export function publicSite(s: Settings, logoUrl = "", priceListPdfUrl = "") {
   return {
     name: SITE.name,
     shortName: SITE.shortName,
     domain: SITE.domain,
     // Owner-uploaded logo (from /admin/photos). "" → the built-in brand-logo.png.
     logo: logoUrl,
+    // Owner-uploaded price list PDF (from /admin/settings). "" → the header's
+    // "Price List" button falls back to the /products page instead of a download.
+    priceListPdfUrl,
     tagline: s.tagline,
     phone: s.phone,
     whatsapp: s.whatsapp,

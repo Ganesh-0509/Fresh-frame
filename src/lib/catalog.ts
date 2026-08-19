@@ -513,6 +513,47 @@ export async function getLogoUrl(): Promise<string> {
 	return s.logo || "";
 }
 
+/* ---- price list PDF ----
+ * Stored in the same site_images table as the logo/About photos — it's just another
+ * piece of owner-uploaded binary data, one row, replaced whole on each upload. Kept
+ * out of SiteImageGroup/SITE_IMAGE_GROUPS since that type drives the Photos page's
+ * image-only UI; this one is served as a forced download, not rendered as a picture.
+ * The "Price List" button in the header links straight to its URL.
+ */
+const PRICE_LIST_PDF_GROUP = "price-list-pdf";
+
+export async function getPriceListPdfMeta(): Promise<{ filename: string; url: string } | null> {
+	try {
+		const rows = await db()
+			.select({ id: siteImages.id, v: siteImages.v, caption: siteImages.caption })
+			.from(siteImages)
+			.where(eq(siteImages.group, PRICE_LIST_PDF_GROUP))
+			.limit(1);
+		if (!rows[0]) return null;
+		return { filename: rows[0].caption || "price-list.pdf", url: siteImageUrl(rows[0].id, rows[0].v) };
+	} catch {
+		return null;
+	}
+}
+
+/** Replace the price list PDF (deletes any existing one first — there is only ever one). */
+export async function setPriceListPdf(dataUrl: string, filename: string): Promise<void> {
+	const d = db();
+	await d.delete(siteImages).where(eq(siteImages.group, PRICE_LIST_PDF_GROUP));
+	await d.insert(siteImages).values({
+		id: `${PRICE_LIST_PDF_GROUP}-${crypto.randomUUID().slice(0, 8)}`,
+		group: PRICE_LIST_PDF_GROUP,
+		data: dataUrl,
+		v: 1,
+		caption: filename,
+		sort: 0,
+	});
+}
+
+export async function deletePriceListPdf(): Promise<void> {
+	await db().delete(siteImages).where(eq(siteImages.group, PRICE_LIST_PDF_GROUP));
+}
+
 export async function createProduct(p: {
 	categoryId: string;
 	line: LineId;

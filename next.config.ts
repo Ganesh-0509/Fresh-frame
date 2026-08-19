@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	/* config options here */
+	experimental: {
+		// Default is 1MB — too small for the price-list PDF upload
+		// (admin → Settings), which is sent as a Server Action.
+		serverActions: { bodySizeLimit: "2mb" },
+	},
 };
 
 export default nextConfig;

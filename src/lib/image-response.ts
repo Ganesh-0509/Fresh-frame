@@ -17,11 +17,15 @@ export function dataUrlResponse(dataUrl: string | null): NextResponse {
 	const [, mime, b64] = m;
 
 	const bin = Buffer.from(b64, "base64");
-	return new NextResponse(new Uint8Array(bin), {
-		headers: {
-			"Content-Type": mime,
-			"Content-Length": String(bin.length),
-			"Cache-Control": "public, max-age=31536000, immutable",
-		},
-	});
+	const headers: Record<string, string> = {
+		"Content-Type": mime,
+		"Content-Length": String(bin.length),
+		"Cache-Control": "public, max-age=31536000, immutable",
+	};
+	// The only PDF ever served through this route is the owner-uploaded price list
+	// (see getPriceListPdfMeta) — always a forced download, never rendered inline.
+	if (mime === "application/pdf") {
+		headers["Content-Disposition"] = 'attachment; filename="price-list.pdf"';
+	}
+	return new NextResponse(new Uint8Array(bin), { headers });
 }

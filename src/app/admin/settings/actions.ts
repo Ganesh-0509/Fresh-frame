@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getSettings, saveSettings } from "@/lib/catalog";
+import { getSettings, saveSettings, setPriceListPdf, deletePriceListPdf } from "@/lib/catalog";
 import { emailConfigured, ownerEmail, sendEmail } from "@/lib/email";
 import { SITE, areaKey, cleanMapUrl, type ServiceArea, type EmailTemplate } from "@/lib/site";
 import { parseDeliveryCsv, parseDeliveryWorkbook, mergeDeliveryImport } from "@/lib/delivery-csv";
@@ -53,6 +53,44 @@ export async function importDeliveryFileAction(formData: FormData) {
 	revalidatePath("/checkout");
 	revalidatePath("/admin/settings");
 	redirect(`/admin/settings?import=${rows.length}#delivery`);
+}
+
+// D1 caps a single stored value at 2MB; base64 inflates a file by ~4/3, so the
+// raw upload has to stay well under that to leave room for the encoding overhead.
+const MAX_PRICE_LIST_PDF_BYTES = 1_400_000; // ~1.4 MB
+
+/**
+ * Owner uploads the real price list as a PDF — the header's "Price List" button
+ * downloads whatever is saved here. Replaces any PDF already there.
+ */
+export async function uploadPriceListPdfAction(formData: FormData) {
+	await requireAdmin();
+	const file = formData.get("priceListPdf");
+	if (!(file instanceof File) || file.size === 0) {
+		redirect("/admin/settings?pdf=empty#price-list-pdf");
+	}
+	const f = file as File;
+	if (f.size > MAX_PRICE_LIST_PDF_BYTES) {
+		redirect("/admin/settings?pdf=toobig#price-list-pdf");
+	}
+	const buf = Buffer.from(await f.arrayBuffer());
+	// Trust the file's actual bytes, not its declared type/extension — a renamed
+	// or corrupt upload doesn't start with the PDF magic number.
+	if (buf.subarray(0, 5).toString("latin1") !== "%PDF-") {
+		redirect("/admin/settings?pdf=badfile#price-list-pdf");
+	}
+	await setPriceListPdf(`data:application/pdf;base64,${buf.toString("base64")}`, f.name || "price-list.pdf");
+	revalidatePath("/", "layout"); // the header/download link lives on every page
+	revalidatePath("/admin/settings");
+	redirect("/admin/settings?pdf=uploaded#price-list-pdf");
+}
+
+export async function deletePriceListPdfAction() {
+	await requireAdmin();
+	await deletePriceListPdf();
+	revalidatePath("/", "layout");
+	revalidatePath("/admin/settings");
+	redirect("/admin/settings?pdf=deleted#price-list-pdf");
 }
 
 export async function saveSettingsAction(formData: FormData) {
