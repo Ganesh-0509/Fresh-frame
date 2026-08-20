@@ -23,12 +23,12 @@ const FEATURES: { Icon: ComponentType<{ className?: string }>; title: string; bo
 	{
 		Icon: MedalIcon,
 		title: "Quality Products",
-		body: "We buy in bulk at Sivakasi from established manufacturers and store under a licensed magazine. The same boxes the big shops sell — at the rate we buy them for.",
+		body: "12+ years buying in bulk at Sivakasi from established manufacturers, stored under a licensed magazine. The same boxes the big shops sell — at the rate we buy them for.",
 	},
 	{
 		Icon: TruckIcon,
 		title: "Delivery",
-		body: "Free transport-office delivery across South India. Collect from your nearest depot — crackers cannot legally travel by courier.",
+		body: "Free transport-office delivery to Chennai, Tiruvallur, Kanchipuram and 140+ towns across Tamil Nadu, plus Puducherry, Kerala, Karnataka, Andhra Pradesh and Telangana. Collect from your nearest depot — crackers cannot legally travel by courier.",
 	},
 	{
 		Icon: LeafIcon,

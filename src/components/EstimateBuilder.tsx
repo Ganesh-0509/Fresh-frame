@@ -270,14 +270,17 @@ export default function EstimateBuilder({
 															</span>
 														)}
 														<span>
-															<span className="block font-medium text-ink">
+															<Link
+																href={`/products/${p.id}`}
+																className="block font-medium text-ink hover:text-brand hover:underline"
+															>
 																{p.name}
 																{soldOut && (
 																	<span className="ml-1.5 rounded-sm bg-[#fdecec] px-1.5 py-0.5 text-[12px] font-semibold text-brand">
 																		SOLD OUT
 																	</span>
 																)}
-															</span>
+															</Link>
 														</span>
 													</div>
 												</td>

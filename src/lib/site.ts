@@ -21,6 +21,14 @@ export const SITE = {
   whatsapp: "919344170018", // digits only, country code, no + and no spaces
   email: "standardfireworkssivakasi5@gmail.com",
   address: {
+    // City-level only, deliberately — client considers the exact street (DRR Nagar,
+    // Avadi) a security risk to publish for a fireworks storage site (2026-08-20).
+    // Keep this "Chennai, Tamil Nadu" and matching addressLocality/geo in
+    // lib/seo.ts's LocalBusiness schema — do NOT swap in a specific street address,
+    // Sivakasi or Chennai. A street/locality mismatch confuses Google's local-SEO
+    // signals (found live 2026-08-19), so if this ever needs a street-level value
+    // again, keep it consistent with addressLocality — but the client's call is no
+    // street detail at all.
     line1: "Chennai, Tamil Nadu",
   },
   hours: "Mon–Sun · 10:00 AM – 8:00 PM",

@@ -42,6 +42,19 @@ export function customerMailLink(to: string, subject: string, body: string): str
 }
 
 /**
+ * Opens a Gmail compose draft in the browser (view=cm) instead of relying on
+ * an OS-registered mail app — mailto: links only work if the device has a
+ * desktop mail client set as default, which most people don't. This always
+ * works as long as the owner is logged into Gmail, and matches how they
+ * actually check/send: review in Gmail, then attach the invoice PDF by hand
+ * (Gmail can't auto-attach a file dropped from a browser download either).
+ */
+export function gmailComposeLink(to: string, subject: string, body: string): string {
+	const q = new URLSearchParams({ view: "cm", fs: "1", to, su: subject, body });
+	return `https://mail.google.com/mail/?${q.toString()}`;
+}
+
+/**
  * Friendly, per-status update for a customer. `templates` is the owner's own
  * wording (Admin → Settings → "Customer email wording") — when the current
  * status has a subject/body set, it wins over the built-in default below, with

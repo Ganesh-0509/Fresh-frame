@@ -104,6 +104,50 @@ export function faqJsonLd(items: { q: string; a: string }[]) {
 	};
 }
 
+/**
+ * Product schema for one price-list item — the single biggest lever from the
+ * 2026-08-19 SEO audit: every product used to live only as a `#hash` anchor
+ * inside one `/products` page, so Google had no per-SKU URL to index or rank
+ * at all. `availability` follows the same rule the price-list table already
+ * uses (`stock === 0` → out of stock); a priced-TBC item is still "in stock"
+ * since it can be ordered, just not at a confirmed rate yet.
+ */
+export function productJsonLd(p: {
+	id: string;
+	name: string;
+	content: string;
+	price: number;
+	mrp: number;
+	image: string;
+	categoryName: string;
+	inStock: boolean;
+}) {
+	return {
+		"@context": "https://schema.org",
+		"@type": "Product",
+		name: p.name,
+		description: `${p.name}${p.content ? ` — ${p.content}` : ""}, from the ${p.categoryName} range. Sivakasi crackers sold direct to Chennai & South India at wholesale rates.`,
+		category: p.categoryName,
+		image: p.image ? absoluteUrl(p.image) : undefined,
+		url: absoluteUrl(`/products/${p.id}`),
+		brand: { "@type": "Brand", name: SITE.name },
+		...(p.price > 0
+			? {
+					offers: {
+						"@type": "Offer",
+						url: absoluteUrl(`/products/${p.id}`),
+						priceCurrency: "INR",
+						price: p.price,
+						availability: p.inStock
+							? "https://schema.org/InStock"
+							: "https://schema.org/OutOfStock",
+						itemCondition: "https://schema.org/NewCondition",
+					},
+				}
+			: {}),
+	};
+}
+
 /** BreadcrumbList schema for an inner page. */
 export function breadcrumbJsonLd(trail: { name: string; path: string }[]) {
 	return {

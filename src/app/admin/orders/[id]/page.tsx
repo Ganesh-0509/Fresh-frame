@@ -10,7 +10,7 @@ import {
 	type OrderStatus,
 } from "@/lib/db";
 import { money, SITE, isSafeImageDataUrl } from "@/lib/site";
-import { customerMailLink, statusEmail, emailConfigured, sendEmail, ownerEmail } from "@/lib/email";
+import { statusEmail, emailConfigured, sendEmail, ownerEmail, gmailComposeLink } from "@/lib/email";
 import { getSettings } from "@/lib/catalog";
 import { StatusPill } from "@/components/StatusPill";
 import { getCoupon } from "@/lib/coupons";
@@ -362,19 +362,20 @@ export default async function OrderDetail({
 						{order.email ? (
 							<>
 								<p className="mb-3 text-[14px] text-muted">
-									{emailConfigured()
-										? "Send a status update by email."
-										: "Send a status update by email — attach the PDF above first; mailto links can't attach files automatically."}
+									Opens a Gmail draft with the status message already filled in — attach the PDF you
+									just downloaded, then send.
 								</p>
 								<a
-									href={customerMailLink(
+									href={gmailComposeLink(
 										order.email,
 										statusEmail(order, settings.emailTemplates).subject,
 										statusEmail(order, settings.emailTemplates).text,
 									)}
+									target="_blank"
+									rel="noopener noreferrer"
 									className="block rounded-lg bg-brand px-4 py-3 text-center text-[15px] font-bold text-white hover:brightness-110"
 								>
-									Open email with "{STATUS_LABEL[order.status as OrderStatus]}" message
+									Open in Gmail with "{STATUS_LABEL[order.status as OrderStatus]}" message
 								</a>
 							</>
 						) : (
@@ -384,8 +385,8 @@ export default async function OrderDetail({
 						)}
 						<p className="mt-3 text-[13px] text-muted">
 							{emailConfigured()
-								? "Emails are on — status changes send automatically, and the invoice PDF rides along on the order-received email."
-								: `Automatic emails aren't switched on yet. Download the invoice PDF above, then use "Open email" and attach it yourself before sending.`}
+								? "Emails are on — status changes send automatically, and the invoice PDF rides along on the order-received email. Use the Gmail button above only if you also want to send one by hand."
+								: "Automatic emails aren't switched on yet — download the PDF above, then use the Gmail button to send it yourself."}
 						</p>
 					</Card>
 				</div>
